@@ -1,0 +1,232 @@
+.portal-shell {
+  position: relative;
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  background: radial-gradient(
+    circle at center,
+    rgba(255, 255, 255, 0.8),
+    rgba(245, 240, 234, 0.96) 38%,
+    rgba(236, 229, 220, 1) 100%
+  );
+  overflow: hidden;
+  opacity: 0;
+  transition: opacity 0.6s ease;
+  padding-top: 60px;
+}
+
+.portal-clock {
+  position: absolute;
+  top: 28px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 2;
+}
+
+.portal-shell--ready {
+  opacity: 1;
+}
+
+.portal-shell::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle, rgba(195, 180, 155, 0.12) 1.5px, transparent 1.6px),
+    radial-gradient(circle, rgba(195, 180, 155, 0.08) 1px, transparent 1.4px);
+  background-size: 22px 22px;
+  background-position:
+    0 0,
+    11px 11px;
+  pointer-events: none;
+}
+
+.portal-panel {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(150px, 1fr));
+  gap: 16px;
+  width: min(52vmin, 460px);
+  aspect-ratio: 1;
+  padding: 0;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  transform: translateY(18px) rotateX(6deg);
+  transform-style: preserve-3d;
+  animation: none;
+}
+
+.portal-link {
+  position: relative;
+  z-index: 1;
+  text-decoration: none;
+  color: rgba(255, 255, 255, 0.96);
+}
+
+.portal-link--button {
+  border: none;
+  background: transparent;
+  padding: 0;
+  cursor: pointer;
+  font: inherit;
+}
+
+.portal-card {
+  width: 100%;
+  height: 100%;
+  min-height: 110px;
+  border-radius: 20px;
+  display: grid;
+  place-items: center;
+  box-shadow: 0 12px 22px rgba(119, 98, 77, 0.06);
+  transform: translateZ(4px);
+  transition:
+    transform 0.28s ease,
+    box-shadow 0.28s ease;
+}
+
+.portal-link:hover .portal-card {
+  transform: translateY(-2px) translateZ(12px);
+  box-shadow: 0 14px 26px rgba(119, 98, 77, 0.1);
+}
+
+.portal-card span {
+  display: inline-block;
+  color: #6a584c;
+  font-family: "OPPO Sans", "PingFang SC", "Microsoft YaHei", sans-serif;
+  font-size: clamp(1.25rem, 2vw, 1.75rem);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.25);
+}
+
+.portal-core {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: min(26vmin, 180px);
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+  transform: translate(-50%, -50%);
+  border-radius: 38%;
+  background: rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(120, 107, 90, 0.08);
+  box-shadow: none;
+}
+
+.portal-core::before {
+  display: none;
+}
+
+.portal-core img {
+  width: 84%;
+  height: 84%;
+  object-fit: contain;
+  filter: none;
+}
+
+.portal-footer-wrap {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: max(24px, env(safe-area-inset-bottom));
+  display: flex;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.portal-footer-card {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 150px;
+  padding: 8px 14px;
+  border: none !important;
+  border-radius: 999px;
+  background: transparent;
+  font-family:
+    "OPPO Sans", "OPPO Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  line-height: 1.2;
+  text-align: center;
+  box-shadow: none !important;
+  color: rgba(72, 60, 52, 0.82);
+}
+
+.modal-quote {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  padding: 10px 2px 8px;
+  font-family: "OPPO Sans", "PingFang SC", "Microsoft YaHei", sans-serif;
+  font-size: 1.02rem;
+  line-height: 1.7;
+  letter-spacing: 0.03em;
+  color: #6d5549;
+  text-align: center;
+}
+
+.modal-quote p {
+  display: block;
+  width: 100%;
+  margin: 0;
+  text-align: center;
+  opacity: 1;
+  transform: none;
+  clip-path: none;
+  animation: none;
+  font-weight: 600;
+}
+
+.modal-blue {
+  color: #6d5549;
+  font-weight: 700;
+}
+
+.drawer-content {
+  padding: 20px 20px 8px;
+  color: #6a584c;
+  font-family: "OPPO Sans", "PingFang SC", "Microsoft YaHei", sans-serif;
+  line-height: 1.8;
+  font-size: 1.08rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.drawer-content p {
+  margin: 0;
+}
+
+.drawer-link {
+  color: #5b7cff;
+  text-decoration: none;
+  font-weight: 700;
+}
+
+.drawer-link:hover {
+  text-decoration: underline;
+}
+
+@media (max-width: 700px) {
+  .portal-panel {
+    width: min(76vw, 440px);
+    gap: 16px;
+    padding: 16px;
+  }
+
+  .portal-card {
+    min-height: 94px;
+  }
+
+  .portal-core {
+    width: min(26vw, 150px);
+  }
+}
