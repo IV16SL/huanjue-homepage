@@ -19,7 +19,7 @@ function App() {
   const [leftDrawerData, setLeftDrawerData] = useState(null)
   const [rightDrawerData, setRightDrawerData] = useState(null)
   const [routeLoading, setRouteLoading] = useState(false)
-  const [routeTip, setRouteTip] = useState('正在进入宇宙之主的领域...')
+  const [routeTip, setRouteTip] = useState('正在进入宇宙之主的领地...')
 
   useEffect(() => {
     const loadingTimer = window.setTimeout(() => setLoading(false), 1400)
@@ -98,7 +98,7 @@ function App() {
     <>
       <Loading
         active={loading || routeLoading}
-        tip={routeLoading ? routeTip : '正在进入幻觉世界...'}
+        tip={routeLoading ? routeTip : '正在进入宇宙之主的领地...'}
         fadeDuration={0.6}
         zIndex={3000}
       />
