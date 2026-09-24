@@ -295,8 +295,8 @@
   font-family: "Nunito", "Noto Sans SC", sans-serif;
   font-size: 28px;
   font-weight: 800;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  text-transform: none;
 }
 
 .brief-drawer-close {
