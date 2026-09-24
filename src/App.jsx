@@ -1,4 +1,5 @@
-import { Button, Card, Drawer, Loading, Modal, Time } from 'animal-island-ui'
+import { Button, Card, Drawer, Loading, Modal, Time, Title } from 'animal-island-ui'
+import { MenuIcon } from 'naive-icons'
 import { useEffect, useState } from 'react'
 import 'animal-island-ui/style'
 import './App.css'
@@ -13,6 +14,9 @@ const tiles = [
 function App() {
   const [loading, setLoading] = useState(true)
   const [modalOpen, setModalOpen] = useState(false)
+  const [wasteOpen, setWasteOpen] = useState(false)
+  const [navConfirm, setNavConfirm] = useState(null)
+  const [briefOpen, setBriefOpen] = useState(false)
   const [portalVisible, setPortalVisible] = useState(false)
   const [leftDrawerOpen, setLeftDrawerOpen] = useState(false)
   const [rightDrawerOpen, setRightDrawerOpen] = useState(false)
@@ -36,14 +40,28 @@ function App() {
     setPortalVisible(true)
   }
 
-  const handleDrawerLinkClick = (event, url, label, targetBlank = true) => {
-    event.preventDefault()
+  const handleModalCancel = () => {
+    setModalOpen(false)
+    setWasteOpen(true)
+    setTimeout(() => {
+      window.location.reload()
+    }, 1000)
+  }
+
+  const handleWasteClose = () => {
+    setWasteOpen(false)
+    window.location.reload()
+  }
+
+  const handleNavigation = (event, url, label, targetBlank = true) => {
+    if (event) event.preventDefault()
     if (routeLoading) return
 
     setRouteTip(label)
     setRouteLoading(true)
     setLeftDrawerOpen(false)
     setRightDrawerOpen(false)
+    setNavConfirm(null)
 
     window.setTimeout(() => {
       if (targetBlank) {
@@ -55,41 +73,55 @@ function App() {
     }, 700)
   }
 
+  const handleDrawerLinkClick = (event, url, label, targetBlank = true) => {
+    handleNavigation(event, url, label, targetBlank)
+  }
+
+  const handleNavConfirm = () => {
+    if (!navConfirm) return
+    handleNavigation(null, navConfirm.href, navConfirm.label, navConfirm.targetBlank)
+  }
+
+  const handleNavCancel = () => {
+    setNavConfirm(null)
+  }
+
   const openDrawer = (tile) => {
     if (tile.label === '博客') {
-      setRightDrawerData({
-        title: '幻觉的博客',
+      setNavConfirm({
         href: tile.href,
+        label: '正在进入幻觉的博客...',
+        targetBlank: true,
+        titleText: '幻觉的博客',
       })
-      setLeftDrawerOpen(false)
-      setRightDrawerOpen(true)
       return
     }
 
-    if (tile.label === '邮箱') {
-      setRightDrawerData({
-        title: '邮箱',
+      if (tile.label === '邮箱') {
+      setNavConfirm({
         href: tile.href,
-        kind: 'email',
+        label: '正在打开邮箱...',
+        targetBlank: false,
+        titleText: '邮箱',
+        promptText: '要给我写信吗？',
       })
-      setLeftDrawerOpen(false)
-      setRightDrawerOpen(true)
       return
     }
 
     if (tile.label === '猫猫') {
-      setLeftDrawerData({
-        title: '猫猫',
+      setNavConfirm({
         href: tile.href,
-        kind: 'cat',
+        label: '正在进入猫猫的主页...',
+        targetBlank: true,
+        titleText: '猫猫主页',
       })
-    } else {
-      setLeftDrawerData({
-        title: '幻觉',
-        kind: 'about',
-      })
+      return
     }
 
+    setLeftDrawerData({
+      title: '幻觉',
+      kind: 'about',
+    })
     setRightDrawerOpen(false)
     setLeftDrawerOpen(true)
   }
@@ -106,14 +138,20 @@ function App() {
       <Modal
         open={modalOpen}
         variant="game"
+        title="Alert"
         width={420}
-        typeSpeed={70}
+        typeSpeed={90}
         typewriter
         maskClosable={false}
         footer={
-          <Button type="primary" onClick={handleModalConfirm}>
-            确定
-          </Button>
+          <div className="modal-footer-actions">
+            <Button className="modal-cancel-btn" type="primary" onClick={handleModalCancel}>
+              拒绝
+            </Button>
+            <Button type="primary" onClick={handleModalConfirm}>
+              同意
+            </Button>
+          </div>
         }
         onOk={handleModalConfirm}
       >
@@ -124,10 +162,68 @@ function App() {
         </div>
       </Modal>
 
+      <Modal
+        open={wasteOpen}
+        variant="game"
+        title="Waste"
+        width={420}
+        typeSpeed={90}
+        typewriter
+        maskClosable={false}
+        footer={
+          <Button type="primary" onClick={handleWasteClose}>
+            确认
+          </Button>
+        }
+        onOk={handleWasteClose}
+      >
+        <div className="modal-quote">
+          <p>你被<span className="modal-blue">宇宙之主</span>消灭了……</p>
+        </div>
+      </Modal>
+
+      <Modal
+        open={Boolean(navConfirm)}
+        variant="game"
+        title="Alert"
+        width={420}
+        typeSpeed={90}
+        typewriter
+        maskClosable={false}
+        footer={
+          <div className="modal-footer-actions">
+            <Button className="modal-cancel-btn" type="primary" onClick={handleNavCancel}>
+              取消
+            </Button>
+            <Button type="primary" onClick={handleNavConfirm}>
+              确定
+            </Button>
+          </div>
+        }
+        onOk={handleNavConfirm}
+      >
+        <div className="modal-quote">
+          <p>
+            {navConfirm?.promptText ?? `要前往${navConfirm?.titleText ?? '目标'}吗？`}
+          </p>
+        </div>
+      </Modal>
+
       <div
         className={`portal-shell ${portalVisible ? 'portal-shell--ready' : ''}`}
       >
-        <Time className="portal-clock" />
+        <button
+          type="button"
+          className="brief-menu-btn"
+          aria-label="打开 Brief 菜单"
+          onClick={() => setBriefOpen(true)}
+        >
+          <MenuIcon size={22} color="currentColor" strokeWidth={2.5} aria-hidden="true" />
+        </button>
+
+        <Title className="portal-title" variant="ribbon" color="brown">
+          幻觉的主页
+        </Title>
 
         <div className="portal-panel">
           {tiles.map((tile, index) => {
@@ -209,8 +305,8 @@ function App() {
       <Drawer
         open={leftDrawerOpen}
         title={leftDrawerData?.title ?? '幻觉'}
-        placement="left"
-        width={360}
+        placement="top"
+        height={240}
         maskClosable
         pushBackground
         onClose={() => {
@@ -229,6 +325,60 @@ function App() {
           ) : (
             <p>这里是幻觉的个人主页，欢迎欢迎。</p>
           )}
+        </div>
+      </Drawer>
+
+      <Drawer
+        open={briefOpen}
+        title={null}
+        placement="left"
+        width={300}
+        maskClosable
+        pushBackground
+        className="brief-drawer"
+        onClose={() => setBriefOpen(false)}
+      >
+        <div className="brief-drawer-top">
+          <button
+            type="button"
+            className="brief-drawer-close"
+            aria-label="关闭 Brief 菜单"
+            onClick={() => setBriefOpen(false)}
+          >
+            ×
+          </button>
+          <div className="brief-drawer-title-wrap">
+            <span className="brief-drawer-title">Brief</span>
+          </div>
+        </div>
+        <div className="brief-drawer-header">
+          <Time className="brief-drawer-clock" />
+        </div>
+        <div className="brief-drawer-content">
+          <button type="button" className="brief-menu-item" onClick={() => setBriefOpen(false)}>
+            主页
+          </button>
+          <button type="button" className="brief-menu-item" onClick={() => setBriefOpen(false)}>
+            地球四季
+          </button>
+          <button
+            type="button"
+            className="brief-menu-item"
+            onClick={() => {
+              setBriefOpen(false)
+              setLeftDrawerData({
+                title: '幻觉',
+                kind: 'about',
+              })
+              setRightDrawerOpen(false)
+              setLeftDrawerOpen(true)
+            }}
+          >
+            关于
+          </button>
+          <button type="button" className="brief-menu-item" onClick={() => setBriefOpen(false)}>
+            友情链接
+          </button>
         </div>
       </Drawer>
     </>

@@ -15,12 +15,38 @@
   padding-top: 60px;
 }
 
-.portal-clock {
+.portal-title {
   position: absolute;
-  top: 28px;
+  top: 24px;
   left: 50%;
   transform: translateX(-50%);
   z-index: 2;
+}
+
+.brief-menu-btn {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  z-index: 5;
+  width: 42px;
+  height: 42px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 1px solid rgba(122, 102, 87, 0.2);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.36);
+  backdrop-filter: blur(6px);
+  box-shadow: 0 8px 18px rgba(122, 102, 87, 0.08);
+  color: #6a584c;
+  cursor: pointer;
+}
+
+.brief-menu-btn svg {
+  width: 20px;
+  height: 20px;
+  fill: currentColor;
 }
 
 .portal-shell--ready {
@@ -169,10 +195,11 @@
   width: 100%;
   padding: 10px 2px 8px;
   font-family: "Nunito", "Noto Sans SC", sans-serif;
-  font-size: 1.02rem;
-  line-height: 1.7;
+  font-size: 20px;
+  font-weight: 600;
+  line-height: 1.6;
   letter-spacing: 0.03em;
-  color: #6d5549;
+  color: #8a7b66;
   text-align: center;
 }
 
@@ -193,6 +220,13 @@
   font-weight: 700;
 }
 
+.modal-footer-actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+}
+
 .drawer-content {
   padding: 20px 20px 8px;
   color: #6a584c;
@@ -201,6 +235,113 @@
   font-size: 1.08rem;
   font-weight: 600;
   letter-spacing: 0.02em;
+}
+
+.brief-drawer .animal-header--lePi {
+  display: none;
+}
+
+.brief-drawer .animal-body-lnM2P {
+  padding-top: 0;
+}
+
+.brief-drawer-top {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  padding: 28px 20px 0;
+  box-sizing: border-box;
+}
+
+.brief-drawer-title-wrap {
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  width: 100%;
+  padding-top: 14px;
+  padding-bottom: 4px;
+  padding-left: 20px;
+}
+
+.brief-drawer-title {
+  display: inline-block;
+  color: #725d42;
+  font-family: "Nunito", "Noto Sans SC", sans-serif;
+  font-size: 28px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.brief-drawer-close {
+  position: absolute;
+  right: 18px;
+  top: 18px;
+  z-index: 3;
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: #725d42;
+  font-size: 28px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.brief-drawer-close:hover {
+  background: rgba(114, 93, 66, 0.12);
+}
+
+.brief-drawer-header {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  padding-top: 22px;
+  padding-bottom: 8px;
+  text-align: center;
+}
+
+.brief-drawer-clock {
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  width: fit-content;
+  margin: 0 auto;
+  transform: none;
+  z-index: 1;
+}
+
+.brief-drawer-content {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 8px 12px 8px;
+  align-items: center;
+}
+
+.brief-menu-item {
+  width: 100%;
+  padding: 14px 16px;
+  border: 1px solid rgba(122, 102, 87, 0.16);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.45);
+  color: #6a584c;
+  font-family: "Nunito", "Noto Sans SC", sans-serif;
+  font-size: 16px;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.brief-menu-item:hover {
+  background: rgba(244, 239, 233, 0.8);
+  border-color: rgba(122, 102, 87, 0.28);
+  transform: translateX(2px);
 }
 
 .drawer-content p {
