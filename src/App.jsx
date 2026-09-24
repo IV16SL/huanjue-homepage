@@ -1,4 +1,4 @@
-import { Button, Card, Drawer, Loading, Modal, Time, Title } from 'animal-island-ui'
+import { Button, Card, Countdown, Drawer, Loading, Modal, Time, Title } from 'animal-island-ui'
 import { MenuIcon } from 'naive-icons'
 import { useEffect, useState } from 'react'
 import 'animal-island-ui/style'
@@ -224,6 +224,16 @@ function App() {
         <Title className="portal-title" variant="ribbon" color="brown">
           幻觉的主页
         </Title>
+
+        <div className="portal-countdown-wrap">
+          <Countdown
+            className="portal-countdown"
+            prefix="距离秋天结束还有"
+            value={new Date(Date.UTC(2026, 11, 21, 20, 5, 0))}
+            format="DD天 HH:mm:ss"
+            size="middle"
+          />
+        </div>
 
         <div className="portal-panel">
           {tiles.map((tile, index) => {
