@@ -312,7 +312,6 @@ function App() {
               rowKey={(record) => `${record.phenomenon}-${record.date}`}
               pagination={false}
               striped={true}
-              style={{ width: '60%' }}
             />
           </div>
         )}

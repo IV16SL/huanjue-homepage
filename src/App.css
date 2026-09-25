@@ -185,7 +185,7 @@
 .earth-seasons-table-wrap {
   position: relative;
   z-index: 2;
-  width: min(92vw, 900px);
+  width: min(100%, 820px);
   margin: 12px auto 0;
   display: flex;
   justify-content: center;
@@ -193,6 +193,24 @@
 
 .earth-seasons-table {
   width: min(100%, 820px);
+}
+
+@media (max-width: 768px) {
+  .earth-seasons-table-wrap {
+    width: 100%;
+    overflow-x: hidden;
+  }
+
+  .earth-seasons-table {
+    width: 100%;
+    margin: 0;
+  }
+}
+
+@media (max-width: 480px) {
+  .earth-seasons-table {
+    font-size: 14px;
+  }
 }
 
 .portal-footer-wrap {
