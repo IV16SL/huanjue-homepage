@@ -1,4 +1,4 @@
-import { Button, Card, Countdown, Drawer, Loading, Modal, Time, Title } from 'animal-island-ui'
+import { Button, Card, Countdown, Drawer, Loading, Modal, Table, Time, Title, Footer } from 'animal-island-ui'
 import { MenuIcon } from 'naive-icons'
 import { useEffect, useState } from 'react'
 import 'animal-island-ui/style'
@@ -12,6 +12,8 @@ const tiles = [
 ]
 
 function App() {
+  const getCurrentPath = () => window.location.pathname || '/'
+
   const [loading, setLoading] = useState(true)
   const [modalOpen, setModalOpen] = useState(false)
   const [wasteOpen, setWasteOpen] = useState(false)
@@ -24,14 +26,29 @@ function App() {
   const [rightDrawerData, setRightDrawerData] = useState(null)
   const [routeLoading, setRouteLoading] = useState(false)
   const [routeTip, setRouteTip] = useState('正在进入宇宙之主的领地...')
+  const [currentPath, setCurrentPath] = useState(getCurrentPath())
+
+  const navigateToPath = (path) => {
+    const nextPath = path.startsWith('/') ? path : `/${path}`
+    if (window.location.pathname !== nextPath) {
+      window.history.pushState({}, '', nextPath)
+    }
+    setCurrentPath(nextPath)
+  }
+
+  const isEarthSeasonsPage = currentPath === '/earthseasons'
 
   useEffect(() => {
     const loadingTimer = window.setTimeout(() => setLoading(false), 1400)
     const modalTimer = window.setTimeout(() => setModalOpen(true), 1700)
+    const handleLocationChange = () => setCurrentPath(getCurrentPath())
+
+    window.addEventListener('popstate', handleLocationChange)
 
     return () => {
       window.clearTimeout(loadingTimer)
       window.clearTimeout(modalTimer)
+      window.removeEventListener('popstate', handleLocationChange)
     }
   }, [])
 
@@ -218,63 +235,90 @@ function App() {
           <MenuIcon size={22} color="currentColor" strokeWidth={2.5} aria-hidden="true" />
         </button>
 
-        <Title className="portal-title" variant="ribbon" color="brown">
-          幻觉的主页
+        <Title className="portal-title" variant="layer" color="app-blue">
+          {isEarthSeasonsPage ? '地球四季' : '幻觉的主页'}
         </Title>
 
-        <div className="portal-countdown-wrap">
-          <Countdown
-            className="portal-countdown"
-            prefix="距离秋天结束还有"
-            value={new Date(Date.UTC(2026, 11, 21, 20, 5, 0))}
-            format="DD天 HH:mm:ss"
-            size="middle"
-          />
-        </div>
+        {!isEarthSeasonsPage && (
+          <div className="portal-countdown-wrap">
+            <Countdown
+              className="portal-countdown"
+              prefix="距离秋天结束还有"
+              value={new Date(Date.UTC(2026, 11, 21, 20, 5, 0))}
+              format="DD天 HH:mm:ss"
+              size="middle"
+            />
+          </div>
+        )}
 
-        <div className="portal-panel">
-          {tiles.map((tile, index) => {
-            const isDrawerTile = tile.label === '博客' || tile.label === '关于' || tile.label === '猫猫' || tile.label === '邮箱'
+        {!isEarthSeasonsPage && (
+          <div className="portal-panel">
+            {tiles.map((tile, index) => {
+              const isDrawerTile = tile.label === '博客' || tile.label === '关于' || tile.label === '猫猫' || tile.label === '邮箱'
 
-            if (isDrawerTile) {
+              if (isDrawerTile) {
+                return (
+                  <button
+                    key={tile.label}
+                    type="button"
+                    className="portal-link portal-link--button"
+                    aria-label={tile.label}
+                    onClick={() => openDrawer(tile)}
+                    style={{ animationDelay: `${index * 160}ms` }}
+                  >
+                    <Card type="dashed" color={tile.color} pattern={tile.pattern} hoverable className="portal-card">
+                      <span>{tile.label}</span>
+                    </Card>
+                  </button>
+                )
+              }
+
               return (
-                <button
+                <a
                   key={tile.label}
-                  type="button"
-                  className="portal-link portal-link--button"
+                  className="portal-link"
+                  href={tile.href}
+                  target={tile.href.startsWith('http') ? '_blank' : undefined}
+                  rel={tile.href.startsWith('http') ? 'noreferrer' : undefined}
                   aria-label={tile.label}
-                  onClick={() => openDrawer(tile)}
                   style={{ animationDelay: `${index * 160}ms` }}
                 >
                   <Card type="dashed" color={tile.color} pattern={tile.pattern} hoverable className="portal-card">
                     <span>{tile.label}</span>
                   </Card>
-                </button>
+                </a>
               )
-            }
+            })}
+          </div>
+        )}
 
-            return (
-              <a
-                key={tile.label}
-                className="portal-link"
-                href={tile.href}
-                target={tile.href.startsWith('http') ? '_blank' : undefined}
-                rel={tile.href.startsWith('http') ? 'noreferrer' : undefined}
-                aria-label={tile.label}
-                style={{ animationDelay: `${index * 160}ms` }}
-              >
-                <Card type="dashed" color={tile.color} pattern={tile.pattern} hoverable className="portal-card">
-                  <span>{tile.label}</span>
-                </Card>
-              </a>
-            )
-          })}
-        </div>
+        {isEarthSeasonsPage && (
+          <div className="earth-seasons-table-wrap">
+            <Table
+              className="earth-seasons-table"
+              columns={[
+                { title: 'Phenomenon', dataIndex: 'phenomenon', width: '30%' },
+                { title: 'Date', dataIndex: 'date', width: '35%' },
+                { title: 'Time', dataIndex: 'time', width: '35%' },
+              ]}
+              dataSource={[
+                { phenomenon: 'Perihelion', date: 'Jan 4', time: '01:15' },
+                { phenomenon: 'Equinox', date: 'Mar 20', time: '22:46' },
+                { phenomenon: 'Solstice', date: 'Jun 21', time: '16:24' },
+                { phenomenon: 'Aphelion', date: 'Jul 7', time: '01:30' },
+                { phenomenon: 'Equinox', date: 'Sept 23', time: '08:05' },
+                { phenomenon: 'Solstice', date: 'Dec 22', time: '04:05' },
+              ]}
+              rowKey={(record) => `${record.phenomenon}-${record.date}`}
+              pagination={false}
+              striped={true}
+              style={{ width: '60%' }}
+            />
+          </div>
+        )}
 
         <div className="portal-footer-wrap">
-          <Card type="dashed" color="app-blue" pattern="app-blue" className="portal-footer-card">
-            @2026 huanjue.me
-          </Card>
+          <Footer text="huanjue.me" />
         </div>
       </div>
 
@@ -358,14 +402,22 @@ function App() {
             <span className="brief-drawer-title">Brief</span>
           </div>
         </div>
-        <div className="brief-drawer-header">
-          <Time className="brief-drawer-clock" />
-        </div>
+        {!isEarthSeasonsPage && (
+          <div className="brief-drawer-header">
+            <Time className="brief-drawer-clock" />
+          </div>
+        )}
         <div className="brief-drawer-content">
-          <button type="button" className="brief-menu-item" onClick={() => setBriefOpen(false)}>
+          <button type="button" className="brief-menu-item" onClick={() => {
+            setBriefOpen(false)
+            navigateToPath('/')
+          }}>
             主页
           </button>
-          <button type="button" className="brief-menu-item" onClick={() => setBriefOpen(false)}>
+          <button type="button" className="brief-menu-item" onClick={() => {
+            setBriefOpen(false)
+            navigateToPath('/earthseasons')
+          }}>
             地球四季
           </button>
           <button type="button" className="brief-menu-item" onClick={() => setBriefOpen(false)}>
