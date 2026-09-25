@@ -43,9 +43,6 @@ function App() {
   const handleModalCancel = () => {
     setModalOpen(false)
     setWasteOpen(true)
-    setTimeout(() => {
-      window.location.reload()
-    }, 1000)
   }
 
   const handleWasteClose = () => {
@@ -370,6 +367,12 @@ function App() {
           </button>
           <button type="button" className="brief-menu-item" onClick={() => setBriefOpen(false)}>
             地球四季
+          </button>
+          <button type="button" className="brief-menu-item" onClick={() => setBriefOpen(false)}>
+            太阳系
+          </button>
+          <button type="button" className="brief-menu-item" onClick={() => setBriefOpen(false)}>
+            拨号上网
           </button>
           <button
             type="button"
