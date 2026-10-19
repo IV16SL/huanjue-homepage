@@ -3,7 +3,7 @@ import { MenuIcon, BookIcon, CatIcon, MailIcon, UserIcon, PhoneIcon, LockIcon, C
 import { useEffect, useRef, useState } from 'react'
 import 'animal-island-ui/style'
 import './App.css'
-import { playDialTones, playHandshake } from './dialAudio'
+import { playDialTones } from './dialAudio'
 
 const tiles = [
   { label: '博客', desc: '技术备忘 · 想到哪写到哪', Icon: BookIcon, href: 'https://blog.huanjue.me', color: 'app-pink', pattern: 'app-pink' },
@@ -52,7 +52,7 @@ function App() {
   const dialDoneRef = useRef(false)
   const actxRef = useRef(null)
   const hsTimerRef = useRef(null)
-  const hsHandleRef = useRef(null)
+  const audioRef = useRef(null)
 
   const navigateToPath = (path) => {
     const nextPath = path.startsWith('/') ? path : `/${path}`
@@ -78,13 +78,31 @@ function App() {
     }
   }, [])
 
+  // 登录框打开时预加载握手音频（已按 6.35s 剪好，直接从头播）
+  useEffect(() => {
+    if (dialLoginOpen) {
+      const hs = new Audio('/audio/dial-up-handshake.ogg')
+      hs.preload = 'auto'
+      hs.load()
+      audioRef.current = hs
+      return () => {
+        const cur = audioRef.current
+        if (cur === hs) {
+          try { hs.pause() } catch { /* ignore */ }
+          audioRef.current = null
+        }
+      }
+    }
+    return undefined
+  }, [dialLoginOpen])
+
   // 卸载时停掉拨号音
   useEffect(() => () => {
     if (dialTimerRef.current) window.clearInterval(dialTimerRef.current)
     if (hsTimerRef.current) window.clearTimeout(hsTimerRef.current)
-    const hs = hsHandleRef.current
-    if (hs) {
-      try { hs.stop() } catch { /* ignore */ }
+    const a = audioRef.current
+    if (a) {
+      try { a.pause() } catch { /* ignore */ }
     }
     const actx = actxRef.current
     if (actx) {
@@ -100,16 +118,16 @@ function App() {
         window.clearInterval(dialTimerRef.current)
         dialTimerRef.current = null
       }
-      const hs = hsHandleRef.current
-      const actx = actxRef.current
-      if (hs && actx) {
-        try {
-          const t = actx.currentTime
-          const g = hs.master.gain
-          g.cancelScheduledValues(t)
-          g.setValueAtTime(g.value, t)
-          g.linearRampToValueAtTime(0.0001, t + 1.0)
-        } catch { /* ignore */ }
+      const au = audioRef.current
+      if (au) {
+        const fade = window.setInterval(() => {
+          if (au.volume > 0.15) {
+            au.volume = Math.max(0, au.volume - 0.15)
+          } else {
+            window.clearInterval(fade)
+            try { au.pause() } catch { /* ignore */ }
+          }
+        }, 120)
       }
     }
   }, [dialOpen, dialPercent])
@@ -219,10 +237,10 @@ function App() {
       window.clearTimeout(hsTimerRef.current)
       hsTimerRef.current = null
     }
-    const hs = hsHandleRef.current
+    const hs = audioRef.current
     if (hs) {
-      try { hs.stop() } catch { /* ignore */ }
-      hsHandleRef.current = null
+      try { hs.pause() } catch { /* ignore */ }
+      audioRef.current = null
     }
     const actx = actxRef.current
     if (actx) {
@@ -256,7 +274,10 @@ function App() {
     dialDoneRef.current = false
     setDialOpen(true)
 
-    // Web Audio 实时合成：拨号音 + 输入号码的 DTMF，随后是合成的握手声
+    // 预加载的握手音频（登录框关闭会置空 audioRef，这里先抓到局部变量）
+    const hs = audioRef.current
+
+    // Web Audio 实时合成拨号音 + 输入号码的 DTMF
     const AC = window.AudioContext || window.webkitAudioContext
     let dialingSecs = 0
     if (AC) {
@@ -266,11 +287,13 @@ function App() {
         actx.resume().catch(() => { /* ignore */ })
       }
       dialingSecs = playDialTones(actx, number)
+    }
+
+    // 拨号音播完，停顿 0.6s，再起握手声（文件已按 6.35s 剪好，直接从头播）
+    if (hs) {
       hsTimerRef.current = window.setTimeout(() => {
-        try {
-          hsHandleRef.current = playHandshake(actx)
-        } catch { /* 合成失败就静静拨号 */ }
-      }, Math.round(dialingSecs * 1000))
+        hs.play().catch(() => { /* 自动播放被拦截就静静拨号 */ })
+      }, Math.round((dialingSecs + 0.6) * 1000))
     }
 
     if (dialTimerRef.current) window.clearInterval(dialTimerRef.current)
