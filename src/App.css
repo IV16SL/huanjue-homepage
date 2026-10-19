@@ -1,3 +1,9 @@
+/* 页面背景图案由 <Background> 提供，这里保持透明 */
+.hj-bg-wrap {
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+
 .portal-shell {
   position: relative;
   width: 100%;
@@ -8,12 +14,7 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  background: radial-gradient(
-    circle at center,
-    rgba(255, 255, 255, 0.8),
-    rgba(245, 240, 234, 0.96) 38%,
-    rgba(236, 229, 220, 1) 100%
-  );
+  background: transparent;
   overflow-y: auto;
   overflow-x: hidden;
   opacity: 0;
@@ -26,18 +27,11 @@
   opacity: 1;
 }
 
-.portal-shell::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background:
-    radial-gradient(circle, rgba(195, 180, 155, 0.12) 1.5px, transparent 1.6px),
-    radial-gradient(circle, rgba(195, 180, 155, 0.08) 1px, transparent 1.4px);
-  background-size: 22px 22px;
-  background-position:
-    0 0,
-    11px 11px;
-  pointer-events: none;
+/* Alert 气泡标题：文字 + 警告三角图标 */
+.modal-title-with-icon {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .brief-menu-btn {
@@ -555,6 +549,43 @@
   background: rgba(244, 239, 233, 0.8);
   border-color: rgba(122, 102, 87, 0.28);
   transform: translateX(2px);
+}
+
+.brief-section-label {
+  width: 100%;
+  margin: 10px 0 2px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  color: var(--animal-text-color-secondary);
+  text-align: left;
+  padding-left: 4px;
+}
+
+.bg-swatch-grid {
+  width: 100%;
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 8px;
+  padding: 4px 2px 8px;
+}
+
+.bg-swatch {
+  aspect-ratio: 1;
+  border-radius: 10px;
+  border: 2px solid rgba(122, 102, 87, 0.18);
+  cursor: pointer;
+  padding: 0;
+  transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.bg-swatch:hover {
+  transform: scale(1.1);
+}
+
+.bg-swatch.active {
+  border-color: var(--animal-primary-color);
+  box-shadow: 0 0 0 2px var(--animal-primary-color-bg), 0 2px 8px rgba(25, 200, 185, 0.35);
 }
 
 .drawer-content p {
