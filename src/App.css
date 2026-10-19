@@ -265,12 +265,6 @@
   padding: 8px 2px 2px;
 }
 
-/* 拨号进度条：纯色填充，盖掉 variant 自带的场景图 */
-.hj-dial-progress [class*="animal-fill-"] {
-  background-image: none !important;
-  background-color: var(--animal-primary-color);
-}
-
 .hj-dial-log {
   list-style: none;
   margin: 0;
@@ -289,18 +283,6 @@
   align-items: center;
   gap: 10px;
   line-height: 1.5;
-  animation: hj-dial-line-in 0.3s var(--animal-motion-ease) both;
-}
-
-@keyframes hj-dial-line-in {
-  from {
-    opacity: 0;
-    transform: translateY(6px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
 }
 
 .hj-dial-log li::before {
@@ -310,15 +292,7 @@
   border-radius: 50%;
   background: var(--animal-border-color);
   flex: none;
-}
-
-.hj-dial-log li.done {
-  color: var(--animal-text-color-secondary);
-}
-
-.hj-dial-log li.done::before {
-  background: var(--animal-primary-color);
-  opacity: 0.4;
+  transition: background 0.2s var(--animal-motion-ease);
 }
 
 .hj-dial-log li.on {
@@ -328,17 +302,6 @@
 
 .hj-dial-log li.on::before {
   background: var(--animal-primary-color);
-  animation: hj-dot-pulse 1.2s ease-in-out infinite;
-}
-
-@keyframes hj-dot-pulse {
-  0%,
-  100% {
-    transform: scale(1);
-  }
-  50% {
-    transform: scale(1.35);
-  }
 }
 
 .hj-dial-done {
