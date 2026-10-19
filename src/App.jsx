@@ -11,13 +11,53 @@ const tiles = [
   { label: '关于', desc: '关于这个幻觉', Icon: UserIcon, href: null, color: 'app-yellow', pattern: 'app-yellow' },
 ]
 
-const DIAL_STEPS = [
-  { at: 0, text: '正在拨号 16300……' },
+const getDialSteps = (number) => [
+  { at: 0, text: `正在拨号 ${number}……` },
   { at: 20, text: '正在验证用户名和密码……' },
   { at: 48, text: '已在网络上注册您的计算机……' },
   { at: 74, text: '正在协商 56K 连接……' },
   { at: 100, text: '已连接！速度 49333 bps' },
 ]
+
+// DTMF 双音多频：每个按键 = 行频 + 列频
+const DTMF_FREQS = {
+  '1': [697, 1209], '2': [697, 1336], '3': [697, 1477],
+  '4': [770, 1209], '5': [770, 1336], '6': [770, 1477],
+  '7': [852, 1209], '8': [852, 1336], '9': [852, 1477],
+  '*': [941, 1209], '0': [941, 1336], '#': [941, 1477],
+}
+function toneBurst(ctx, dest, freqs, t, dur, vol = 0.28) {
+  freqs.forEach((f) => {
+    const o = ctx.createOscillator()
+    o.type = 'sine'
+    o.frequency.value = f
+    const g = ctx.createGain()
+    g.gain.setValueAtTime(0.0001, t)
+    g.gain.exponentialRampToValueAtTime(vol, t + 0.015)
+    g.gain.setValueAtTime(vol, t + Math.max(0.015, dur - 0.04))
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur)
+    o.connect(g)
+    g.connect(dest)
+    o.start(t)
+    o.stop(t + dur + 0.05)
+  })
+}
+
+// 用 Web Audio 实时合成：拨号音(1s) + 号码的 DTMF；返回整段时长（秒）
+function playDialTones(ctx, number) {
+  const dest = ctx.destination
+  const t0 = ctx.currentTime + 0.05
+  toneBurst(ctx, dest, [350, 440], t0, 1.0)
+  let t = t0 + 1.0 + 0.12
+  const clean = number.replace(/[^0-9*#]/g, '')
+  for (const ch of clean) {
+    const f = DTMF_FREQS[ch]
+    if (!f) continue
+    toneBurst(ctx, dest, f, t, 0.18)
+    t += 0.18 + 0.07
+  }
+  return t - t0
+}
 
 function App() {
   const getCurrentPath = () => window.location.pathname || '/'
@@ -38,15 +78,21 @@ function App() {
 
   // 拨号上网
   const [dialLoginOpen, setDialLoginOpen] = useState(false)
+  const [dialNumber, setDialNumber] = useState('16300')
   const [dialUser, setDialUser] = useState('')
   const [dialPass, setDialPass] = useState('')
+  const [dialNumberErr, setDialNumberErr] = useState(false)
   const [dialUserErr, setDialUserErr] = useState(false)
   const [dialPassErr, setDialPassErr] = useState(false)
   const [dialOpen, setDialOpen] = useState(false)
   const [dialPercent, setDialPercent] = useState(0)
+  const [helloOpen, setHelloOpen] = useState(false)
   const audioRef = useRef(null)
   const dialTimerRef = useRef(null)
   const dialDoneRef = useRef(false)
+  const actxRef = useRef(null)
+  const hsTimerRef = useRef(null)
+  const hsPlayingRef = useRef(null)
 
   const navigateToPath = (path) => {
     const nextPath = path.startsWith('/') ? path : `/${path}`
@@ -72,12 +118,35 @@ function App() {
     }
   }, [])
 
+  // 登录框打开时预加载握手音频（已按 6.35s 剪好，直接从头播）
+  useEffect(() => {
+    if (dialLoginOpen) {
+      const hs = new Audio('/audio/dial-up-handshake.ogg')
+      hs.preload = 'auto'
+      hs.load()
+      audioRef.current = hs
+      return () => {
+        const cur = audioRef.current
+        if (cur === hs) {
+          try { hs.pause() } catch { /* ignore */ }
+          audioRef.current = null
+        }
+      }
+    }
+    return undefined
+  }, [dialLoginOpen])
+
   // 卸载时停掉拨号音
   useEffect(() => () => {
     if (dialTimerRef.current) window.clearInterval(dialTimerRef.current)
+    if (hsTimerRef.current) window.clearTimeout(hsTimerRef.current)
     const a = audioRef.current
     if (a) {
       try { a.pause() } catch { /* ignore */ }
+    }
+    const actx = actxRef.current
+    if (actx) {
+      actx.close().catch(() => { /* ignore */ })
     }
   }, [])
 
@@ -89,7 +158,7 @@ function App() {
         window.clearInterval(dialTimerRef.current)
         dialTimerRef.current = null
       }
-      const au = audioRef.current
+      const au = hsPlayingRef.current
       if (au) {
         const fade = window.setInterval(() => {
           if (au.volume > 0.15) {
@@ -193,17 +262,10 @@ function App() {
 
   const openDialLogin = () => {
     setBriefOpen(false)
+    setDialNumberErr(false)
     setDialUserErr(false)
     setDialPassErr(false)
     setDialLoginOpen(true)
-  }
-
-  const stopDialAudio = () => {
-    const a = audioRef.current
-    if (a) {
-      try { a.pause() } catch { /* ignore */ }
-      audioRef.current = null
-    }
   }
 
   const closeDial = () => {
@@ -211,14 +273,32 @@ function App() {
       window.clearInterval(dialTimerRef.current)
       dialTimerRef.current = null
     }
-    stopDialAudio()
+    if (hsTimerRef.current) {
+      window.clearTimeout(hsTimerRef.current)
+      hsTimerRef.current = null
+    }
+    const hs = hsPlayingRef.current
+    if (hs) {
+      try { hs.pause() } catch { /* ignore */ }
+      hsPlayingRef.current = null
+    }
+    const actx = actxRef.current
+    if (actx) {
+      actx.close().catch(() => { /* ignore */ })
+      actxRef.current = null
+    }
     setDialOpen(false)
     setDialPercent(0)
   }
 
   const handleDialSubmit = (event) => {
     event.preventDefault()
+    const number = dialNumber.replace(/[^0-9*#]/g, '')
     let ok = true
+    if (!number) {
+      setDialNumberErr(true)
+      ok = false
+    }
     if (!dialUser.trim()) {
       setDialUserErr(true)
       ok = false
@@ -234,9 +314,28 @@ function App() {
     dialDoneRef.current = false
     setDialOpen(true)
 
-    const a = new Audio('/audio/dial-up-modem.ogg')
-    audioRef.current = a
-    a.play().catch(() => { /* 自动播放被拦截就静静拨号 */ })
+    // 预加载的握手音频（登录框关闭会置空 audioRef，这里先抓到局部变量）
+    const hs = audioRef.current
+    hsPlayingRef.current = hs
+
+    // Web Audio 实时合成拨号音 + 输入号码的 DTMF
+    const AC = window.AudioContext || window.webkitAudioContext
+    let dialingSecs = 0
+    if (AC) {
+      const actx = new AC()
+      actxRef.current = actx
+      if (actx.state === 'suspended') {
+        actx.resume().catch(() => { /* ignore */ })
+      }
+      dialingSecs = playDialTones(actx, number)
+    }
+
+    // 拨号音播完再起握手（文件已剪好，直接从头播）
+    if (hs) {
+      hsTimerRef.current = window.setTimeout(() => {
+        hs.play().catch(() => { /* 自动播放被拦截就静静拨号 */ })
+      }, Math.round(dialingSecs * 1000))
+    }
 
     if (dialTimerRef.current) window.clearInterval(dialTimerRef.current)
     dialTimerRef.current = window.setInterval(() => {
@@ -245,6 +344,12 @@ function App() {
   }
 
   const dialDone = dialPercent >= 100
+  const dialSteps = getDialSteps(dialNumber.replace(/[^0-9*#]/g, '') || '16300')
+
+  const handleDialDoneConfirm = () => {
+    closeDial()
+    setHelloOpen(true)
+  }
 
   return (
     <>
@@ -375,7 +480,7 @@ function App() {
                 <img className="hj-avatar" src="/avatar.png" alt="幻觉的头像" />
                 <div className="hj-hero-text">
                   <h1 className="hj-name">幻觉</h1>
-                  <p className="hj-tagline">宇宙之主 · huanjue.me</p>
+                  <p className="hj-tagline">宇宙之主</p>
                   <p className="hj-bio">你好，我是幻觉。这里的一切都是幻觉——除了猫，和 56K 拨号的噪音。</p>
                 </div>
               </section>
@@ -388,6 +493,7 @@ function App() {
                   value={new Date(Date.UTC(2026, 11, 21, 20, 5, 0))}
                   format="DD天 HH:mm:ss"
                   size="middle"
+                  style={{ background: 'transparent', boxShadow: 'none', padding: 0 }}
                 />
               </section>
 
@@ -440,6 +546,15 @@ function App() {
       >
         <form className="hj-dial-form" onSubmit={handleDialSubmit}>
           <Input
+            value={dialNumber}
+            onChange={(e) => { setDialNumber(e.target.value.replace(/[^0-9*#]/g, '')); setDialNumberErr(false) }}
+            placeholder="拨号号码"
+            prefix={<PhoneIcon size={18} color="currentColor" aria-hidden="true" />}
+            status={dialNumberErr ? 'error' : undefined}
+            aria-label="拨号号码"
+            inputMode="tel"
+          />
+          <Input
             value={dialUser}
             onChange={(e) => { setDialUser(e.target.value); setDialUserErr(false) }}
             placeholder="用户名（随便填）"
@@ -456,9 +571,9 @@ function App() {
             status={dialPassErr ? 'error' : undefined}
             aria-label="密码"
           />
-          <p className="hj-dial-tip">16300 拨号上网 · 账号密码随便填，反正都是幻觉</p>
+          <p className="hj-dial-tip">拨号号码决定拨号音 · 账号密码随便填，反正都是幻觉</p>
           <div className="modal-footer-actions">
-            <Button onClick={() => setDialLoginOpen(false)}>
+            <Button type="text" onClick={() => setDialLoginOpen(false)}>
               取消
             </Button>
             <Button type="primary" htmlType="submit">
@@ -476,8 +591,8 @@ function App() {
         width={440}
         maskClosable={false}
         footer={dialDone ? (
-          <Button type="primary" onClick={closeDial}>
-            断开连接
+          <Button type="primary" onClick={handleDialDoneConfirm}>
+            确定
           </Button>
         ) : null}
         typewriter={false}
@@ -485,7 +600,7 @@ function App() {
         <div className="hj-dial-progress">
           <Progress percent={Math.floor(dialPercent)} size="middle" showInfo aria-label="拨号进度" />
           <ul className="hj-dial-log">
-            {DIAL_STEPS.map((s) => (
+            {dialSteps.map((s) => (
               <li key={s.text} className={dialPercent >= s.at ? 'on' : ''}>
                 {s.text}
               </li>
@@ -494,6 +609,28 @@ function App() {
           {dialDone && (
             <p className="hj-dial-done">欢迎来到幻觉互联网！本次连接纯属幻觉。</p>
           )}
+        </div>
+      </Modal>
+
+      {/* 拨号完成后的彩蛋 */}
+      <Modal
+        open={helloOpen}
+        variant="game"
+        title="Hello"
+        width={360}
+        typeSpeed={90}
+        typewriter
+        maskClosable
+        onClose={() => setHelloOpen(false)}
+        footer={
+          <Button type="primary" onClick={() => setHelloOpen(false)}>
+            你好
+          </Button>
+        }
+        onOk={() => setHelloOpen(false)}
+      >
+        <div className="modal-quote">
+          <p>Hello World!</p>
         </div>
       </Modal>
 
