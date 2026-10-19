@@ -1,14 +1,22 @@
-import { Button, Card, Countdown, Drawer, Loading, Modal, Table, Time, Title, Footer } from 'animal-island-ui'
-import { MenuIcon } from 'naive-icons'
-import { useEffect, useState } from 'react'
+import { Button, Card, Countdown, Drawer, Loading, Modal, Input, Progress, Table, Time, Title, Footer } from 'animal-island-ui'
+import { MenuIcon, BookIcon, CatIcon, MailIcon, UserIcon, PhoneIcon, LockIcon, ClockIcon } from 'naive-icons'
+import { useEffect, useRef, useState } from 'react'
 import 'animal-island-ui/style'
 import './App.css'
 
 const tiles = [
-  { label: '博客', href: 'https://blog.huanjue.me', color: 'app-pink', pattern: 'app-pink' },
-  { label: '猫猫', href: 'https://cat.huanjue.me', color: 'purple', pattern: 'purple' },
-  { label: '邮箱', href: 'mailto:hi@huanjue.me', color: 'app-blue', pattern: 'app-blue' },
-  { label: '关于', href: 'https://blog.huanjue.me/about', color: 'app-yellow', pattern: 'app-yellow' },
+  { label: '博客', desc: '技术备忘 · 想到哪写到哪', Icon: BookIcon, href: 'https://blog.huanjue.me', color: 'app-pink', pattern: 'app-pink' },
+  { label: '猫猫', desc: '五只猫的藏身处', Icon: CatIcon, href: 'https://cat.huanjue.me', color: 'purple', pattern: 'purple' },
+  { label: '邮箱', desc: 'hi@huanjue.me · 来信必回（幻觉）', Icon: MailIcon, href: 'mailto:hi@huanjue.me', color: 'app-blue', pattern: 'app-blue' },
+  { label: '关于', desc: '关于这个幻觉', Icon: UserIcon, href: null, color: 'app-yellow', pattern: 'app-yellow' },
+]
+
+const DIAL_STEPS = [
+  { at: 0, text: '正在拨号 16300……' },
+  { at: 20, text: '正在验证用户名和密码……' },
+  { at: 48, text: '已在网络上注册您的计算机……' },
+  { at: 74, text: '正在协商 56K 连接……' },
+  { at: 100, text: '已连接！速度 49333 bps' },
 ]
 
 function App() {
@@ -27,6 +35,18 @@ function App() {
   const [routeLoading, setRouteLoading] = useState(false)
   const [routeTip, setRouteTip] = useState('正在进入宇宙之主的领地...')
   const [currentPath, setCurrentPath] = useState(getCurrentPath())
+
+  // 拨号上网
+  const [dialLoginOpen, setDialLoginOpen] = useState(false)
+  const [dialUser, setDialUser] = useState('')
+  const [dialPass, setDialPass] = useState('')
+  const [dialUserErr, setDialUserErr] = useState(false)
+  const [dialPassErr, setDialPassErr] = useState(false)
+  const [dialOpen, setDialOpen] = useState(false)
+  const [dialPercent, setDialPercent] = useState(0)
+  const audioRef = useRef(null)
+  const dialTimerRef = useRef(null)
+  const dialDoneRef = useRef(false)
 
   const navigateToPath = (path) => {
     const nextPath = path.startsWith('/') ? path : `/${path}`
@@ -51,6 +71,37 @@ function App() {
       window.removeEventListener('popstate', handleLocationChange)
     }
   }, [])
+
+  // 卸载时停掉拨号音
+  useEffect(() => () => {
+    if (dialTimerRef.current) window.clearInterval(dialTimerRef.current)
+    const a = audioRef.current
+    if (a) {
+      try { a.pause() } catch { /* ignore */ }
+    }
+  }, [])
+
+  // 拨号完成：停计时器 + 音效淡出
+  useEffect(() => {
+    if (dialOpen && dialPercent >= 100 && !dialDoneRef.current) {
+      dialDoneRef.current = true
+      if (dialTimerRef.current) {
+        window.clearInterval(dialTimerRef.current)
+        dialTimerRef.current = null
+      }
+      const au = audioRef.current
+      if (au) {
+        const fade = window.setInterval(() => {
+          if (au.volume > 0.15) {
+            au.volume = Math.max(0, au.volume - 0.15)
+          } else {
+            window.clearInterval(fade)
+            try { au.pause() } catch { /* ignore */ }
+          }
+        }, 120)
+      }
+    }
+  }, [dialOpen, dialPercent])
 
   const handleModalConfirm = () => {
     setModalOpen(false)
@@ -111,7 +162,7 @@ function App() {
       return
     }
 
-      if (tile.label === '邮箱') {
+    if (tile.label === '邮箱') {
       setNavConfirm({
         href: tile.href,
         label: '正在打开邮箱...',
@@ -139,6 +190,61 @@ function App() {
     setRightDrawerOpen(false)
     setLeftDrawerOpen(true)
   }
+
+  const openDialLogin = () => {
+    setBriefOpen(false)
+    setDialUserErr(false)
+    setDialPassErr(false)
+    setDialLoginOpen(true)
+  }
+
+  const stopDialAudio = () => {
+    const a = audioRef.current
+    if (a) {
+      try { a.pause() } catch { /* ignore */ }
+      audioRef.current = null
+    }
+  }
+
+  const closeDial = () => {
+    if (dialTimerRef.current) {
+      window.clearInterval(dialTimerRef.current)
+      dialTimerRef.current = null
+    }
+    stopDialAudio()
+    setDialOpen(false)
+    setDialPercent(0)
+  }
+
+  const handleDialSubmit = (event) => {
+    event.preventDefault()
+    let ok = true
+    if (!dialUser.trim()) {
+      setDialUserErr(true)
+      ok = false
+    }
+    if (!dialPass) {
+      setDialPassErr(true)
+      ok = false
+    }
+    if (!ok) return
+
+    setDialLoginOpen(false)
+    setDialPercent(0)
+    dialDoneRef.current = false
+    setDialOpen(true)
+
+    const a = new Audio('/audio/dial-up-modem.ogg')
+    audioRef.current = a
+    a.play().catch(() => { /* 自动播放被拦截就静静拨号 */ })
+
+    if (dialTimerRef.current) window.clearInterval(dialTimerRef.current)
+    dialTimerRef.current = window.setInterval(() => {
+      setDialPercent((p) => Math.min(100, p + 0.7))
+    }, 130)
+  }
+
+  const dialDone = dialPercent >= 100
 
   return (
     <>
@@ -235,91 +341,161 @@ function App() {
           <MenuIcon size={22} color="currentColor" strokeWidth={2.5} aria-hidden="true" />
         </button>
 
-        <Title className="portal-title" variant="layer" color="app-blue">
-          {isEarthSeasonsPage ? '地球四季' : '幻觉的主页'}
-        </Title>
+        <div className="hj-inner">
+          {isEarthSeasonsPage ? (
+            <>
+              <Title className="hj-page-title" variant="layer" color="app-blue">
+                地球四季
+              </Title>
+              <div className="earth-seasons-table-wrap">
+                <Table
+                  className="earth-seasons-table"
+                  columns={[
+                    { title: 'Phenomenon', dataIndex: 'phenomenon', width: '30%' },
+                    { title: 'Date', dataIndex: 'date', width: '35%' },
+                    { title: 'Time', dataIndex: 'time', width: '35%' },
+                  ]}
+                  dataSource={[
+                    { phenomenon: 'Perihelion', date: 'Jan 4', time: '01:15' },
+                    { phenomenon: 'Equinox', date: 'Mar 20', time: '22:46' },
+                    { phenomenon: 'Solstice', date: 'Jun 21', time: '16:24' },
+                    { phenomenon: 'Aphelion', date: 'Jul 7', time: '01:30' },
+                    { phenomenon: 'Equinox', date: 'Sept 23', time: '08:05' },
+                    { phenomenon: 'Solstice', date: 'Dec 22', time: '04:05' },
+                  ]}
+                  rowKey={(record) => `${record.phenomenon}-${record.date}`}
+                  pagination={false}
+                  striped={true}
+                />
+              </div>
+            </>
+          ) : (
+            <>
+              <section className="hj-hero">
+                <img className="hj-avatar" src="/avatar.png" alt="幻觉的头像" />
+                <div className="hj-hero-text">
+                  <h1 className="hj-name">幻觉</h1>
+                  <p className="hj-tagline">宇宙之主 · huanjue.me</p>
+                  <p className="hj-bio">你好，我是幻觉。这里的一切都是幻觉——除了猫，和 56K 拨号的噪音。</p>
+                </div>
+              </section>
 
-        {!isEarthSeasonsPage && (
-          <div className="portal-countdown-wrap">
-            <Countdown
-              className="portal-countdown"
-              prefix="距离秋天结束还有"
-              value={new Date(Date.UTC(2026, 11, 21, 20, 5, 0))}
-              format="DD天 HH:mm:ss"
-              size="middle"
-            />
-          </div>
-        )}
+              <section className="hj-countdown-card" aria-label="倒计时">
+                <ClockIcon size={20} color="currentColor" aria-hidden="true" />
+                <Countdown
+                  className="hj-countdown"
+                  prefix="距离秋天结束还有"
+                  value={new Date(Date.UTC(2026, 11, 21, 20, 5, 0))}
+                  format="DD天 HH:mm:ss"
+                  size="middle"
+                />
+              </section>
 
-        {!isEarthSeasonsPage && (
-          <div className="portal-panel">
-            {tiles.map((tile, index) => {
-              const isDrawerTile = tile.label === '博客' || tile.label === '关于' || tile.label === '猫猫' || tile.label === '邮箱'
+              <nav className="hj-nav" aria-label="站点导航">
+                {tiles.map((tile) => {
+                  const TileIcon = tile.Icon
+                  return (
+                    <button
+                      key={tile.label}
+                      type="button"
+                      className="hj-tile"
+                      aria-label={tile.label}
+                      onClick={() => openDrawer(tile)}
+                    >
+                      <Card type="dashed" color={tile.color} pattern={tile.pattern} hoverable className="hj-tile-card">
+                        <span className="hj-tile-icon">
+                          <TileIcon size={28} color="currentColor" aria-hidden="true" />
+                        </span>
+                        <span className="hj-tile-label">{tile.label}</span>
+                        <span className="hj-tile-desc">{tile.desc}</span>
+                      </Card>
+                    </button>
+                  )
+                })}
+              </nav>
 
-              if (isDrawerTile) {
-                return (
-                  <button
-                    key={tile.label}
-                    type="button"
-                    className="portal-link portal-link--button"
-                    aria-label={tile.label}
-                    onClick={() => openDrawer(tile)}
-                    style={{ animationDelay: `${index * 160}ms` }}
-                  >
-                    <Card type="dashed" color={tile.color} pattern={tile.pattern} hoverable className="portal-card">
-                      <span>{tile.label}</span>
-                    </Card>
-                  </button>
-                )
-              }
-
-              return (
-                <a
-                  key={tile.label}
-                  className="portal-link"
-                  href={tile.href}
-                  target={tile.href.startsWith('http') ? '_blank' : undefined}
-                  rel={tile.href.startsWith('http') ? 'noreferrer' : undefined}
-                  aria-label={tile.label}
-                  style={{ animationDelay: `${index * 160}ms` }}
-                >
-                  <Card type="dashed" color={tile.color} pattern={tile.pattern} hoverable className="portal-card">
-                    <span>{tile.label}</span>
-                  </Card>
-                </a>
-              )
-            })}
-          </div>
-        )}
-
-        {isEarthSeasonsPage && (
-          <div className="earth-seasons-table-wrap">
-            <Table
-              className="earth-seasons-table"
-              columns={[
-                { title: 'Phenomenon', dataIndex: 'phenomenon', width: '30%' },
-                { title: 'Date', dataIndex: 'date', width: '35%' },
-                { title: 'Time', dataIndex: 'time', width: '35%' },
-              ]}
-              dataSource={[
-                { phenomenon: 'Perihelion', date: 'Jan 4', time: '01:15' },
-                { phenomenon: 'Equinox', date: 'Mar 20', time: '22:46' },
-                { phenomenon: 'Solstice', date: 'Jun 21', time: '16:24' },
-                { phenomenon: 'Aphelion', date: 'Jul 7', time: '01:30' },
-                { phenomenon: 'Equinox', date: 'Sept 23', time: '08:05' },
-                { phenomenon: 'Solstice', date: 'Dec 22', time: '04:05' },
-              ]}
-              rowKey={(record) => `${record.phenomenon}-${record.date}`}
-              pagination={false}
-              striped={true}
-            />
-          </div>
-        )}
+              <button type="button" className="hj-dialup" onClick={openDialLogin}>
+                <PhoneIcon size={18} color="currentColor" aria-hidden="true" />
+                <span>拨号上网 · 56K</span>
+              </button>
+            </>
+          )}
+        </div>
 
         <div className="portal-footer-wrap">
           <Footer text="huanjue.me" />
         </div>
       </div>
+
+      {/* 拨号上网：登录表单 */}
+      <Modal
+        open={dialLoginOpen}
+        variant="game"
+        title="拨号连接"
+        width={400}
+        maskClosable
+        onClose={() => setDialLoginOpen(false)}
+        footer={null}
+        typewriter={false}
+      >
+        <form className="hj-dial-form" onSubmit={handleDialSubmit}>
+          <Input
+            value={dialUser}
+            onChange={(e) => { setDialUser(e.target.value); setDialUserErr(false) }}
+            placeholder="用户名（随便填）"
+            prefix={<UserIcon size={18} color="currentColor" aria-hidden="true" />}
+            status={dialUserErr ? 'error' : undefined}
+            aria-label="用户名"
+          />
+          <Input
+            type="password"
+            value={dialPass}
+            onChange={(e) => { setDialPass(e.target.value); setDialPassErr(false) }}
+            placeholder="密码（也是随便填）"
+            prefix={<LockIcon size={18} color="currentColor" aria-hidden="true" />}
+            status={dialPassErr ? 'error' : undefined}
+            aria-label="密码"
+          />
+          <p className="hj-dial-tip">16300 拨号上网 · 账号密码随便填，反正都是幻觉</p>
+          <div className="modal-footer-actions">
+            <Button onClick={() => setDialLoginOpen(false)}>
+              取消
+            </Button>
+            <Button type="primary" htmlType="submit">
+              连接
+            </Button>
+          </div>
+        </form>
+      </Modal>
+
+      {/* 拨号上网：拨号进度 */}
+      <Modal
+        open={dialOpen}
+        variant="game"
+        title={dialDone ? '已连接' : '正在连接……'}
+        width={440}
+        maskClosable={false}
+        footer={dialDone ? (
+          <Button type="primary" onClick={closeDial}>
+            断开连接
+          </Button>
+        ) : null}
+        typewriter={false}
+      >
+        <div className="hj-dial-progress">
+          <Progress percent={Math.floor(dialPercent)} size="middle" showInfo aria-label="拨号进度" />
+          <ul className="hj-dial-log">
+            {DIAL_STEPS.map((s) => (
+              <li key={s.text} className={dialPercent >= s.at ? 'on' : ''}>
+                {s.text}
+              </li>
+            ))}
+          </ul>
+          {dialDone && (
+            <p className="hj-dial-done">欢迎来到幻觉互联网！本次连接纯属幻觉。</p>
+          )}
+        </div>
+      </Modal>
 
       <Drawer
         open={rightDrawerOpen}
@@ -422,7 +598,7 @@ function App() {
           <button type="button" className="brief-menu-item" onClick={() => setBriefOpen(false)}>
             太阳系
           </button>
-          <button type="button" className="brief-menu-item" onClick={() => setBriefOpen(false)}>
+          <button type="button" className="brief-menu-item" onClick={openDialLogin}>
             拨号上网
           </button>
           <button
