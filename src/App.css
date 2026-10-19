@@ -115,6 +115,53 @@
   justify-content: center;
 }
 
+/* 主页分页 */
+.hj-pager {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.hj-pager-btn {
+  padding: 8px 22px;
+  border-radius: 999px;
+  border: 1px solid var(--animal-border-color-light);
+  background: rgba(255, 255, 255, 0.36);
+  backdrop-filter: blur(6px);
+  color: var(--animal-text-color-secondary);
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  font-variant-numeric: tabular-nums;
+}
+
+.hj-pager-btn.active {
+  background: var(--animal-primary-color-bg);
+  border-color: var(--animal-primary-color);
+  color: var(--animal-text-color);
+}
+
+.hj-pager-live {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.hj-pager-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #e2574c;
+  animation: hj-pager-pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes hj-pager-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.45; transform: scale(0.8); }
+}
+
 /* 抽卡 */
 .gacha-today-line {
   width: 100%;
@@ -179,9 +226,14 @@
 }
 
 .gacha-meta {
+  display: inline-block;
   font-size: 13px;
-  color: var(--animal-text-color-secondary);
-  margin-top: 4px;
+  font-weight: 700;
+  margin-top: 8px;
+  padding: 4px 14px;
+  border-radius: 999px;
+  background: rgba(60, 42, 28, 0.55);
+  color: #fffdf8;
 }
 
 .gacha-desc {
