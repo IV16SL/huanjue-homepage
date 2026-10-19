@@ -1,10 +1,9 @@
 import { Background, Button, Card, Countdown, Drawer, Loading, Modal, Input, Progress, Table, Time, Title, Footer } from 'animal-island-ui'
-import { MenuIcon, BookIcon, CatIcon, MailIcon, UserIcon, PhoneIcon, LockIcon, ClockIcon } from 'naive-icons'
+import { MenuIcon, BookIcon, CatIcon, MailIcon, UserIcon, PhoneIcon, LockIcon, ClockIcon, AlertTriangleIcon } from 'naive-icons'
 import { useEffect, useRef, useState } from 'react'
 import 'animal-island-ui/style'
 import './App.css'
 import { playDialTones } from './dialAudio'
-import AlertTriangleIcon from './AlertTriangleIcon'
 
 const tiles = [
   { label: '博客', desc: '技术备忘 · 想到哪写到哪', Icon: BookIcon, href: 'https://blog.huanjue.me', color: 'app-pink', pattern: 'app-pink' },
