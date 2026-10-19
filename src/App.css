@@ -1,9 +1,3 @@
-/* 页面背景图案由 <Background> 提供，这里保持透明 */
-.hj-bg-wrap {
-  min-height: 100vh;
-  min-height: 100dvh;
-}
-
 .portal-shell {
   position: relative;
   width: 100%;
@@ -14,7 +8,12 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  background: transparent;
+  background: radial-gradient(
+    circle at center,
+    rgba(255, 255, 255, 0.8),
+    rgba(245, 240, 234, 0.96) 38%,
+    rgba(236, 229, 220, 1) 100%
+  );
   overflow-y: auto;
   overflow-x: hidden;
   opacity: 0;
@@ -27,167 +26,18 @@
   opacity: 1;
 }
 
-/* Alert 气泡标题：文字 + 警告三角图标 */
-.modal-title-with-icon {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-}
-
-/* 拨号：AT 指令终端 */
-.hj-at-term {
-  margin-top: 2px;
-  font-size: 13px;
-  max-height: 150px;
-  overflow-y: auto;
-}
-
-/* 番茄钟 */
-.hj-pomo {
-  width: min(100%, 430px);
-  margin: 18px auto 0;
-  padding: 20px 22px;
-  background: var(--animal-bg-color);
-  border: 1px solid var(--animal-border-color-light);
-  border-radius: var(--animal-radius-lg, 24px);
-  box-shadow: var(--animal-shadow-sm, 0 2px 8px rgba(122, 102, 87, 0.08));
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  box-sizing: border-box;
-}
-
-.hj-pomo-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.hj-pomo-title {
-  font-size: 18px;
-  font-weight: 800;
-  color: var(--animal-text-color);
-}
-
-.hj-pomo-count {
-  font-size: 14px;
-  font-weight: 700;
-  color: var(--animal-text-color-secondary);
-}
-
-.hj-pomo-modes {
-  display: flex;
-  gap: 8px;
-}
-
-.hj-pomo-mode {
-  flex: 1;
-  padding: 8px 0;
-  border-radius: 12px;
-  border: 1px solid var(--animal-border-color-light);
-  background: transparent;
-  color: var(--animal-text-color-secondary);
-  font-size: 14px;
-  font-weight: 700;
-  cursor: pointer;
-  transition: all 0.15s ease;
-}
-
-.hj-pomo-mode.active {
-  background: var(--animal-primary-color-bg);
-  border-color: var(--animal-primary-color);
-  color: var(--animal-text-color);
-}
-
-.hj-pomo-time {
-  font-size: 56px;
-  font-weight: 800;
-  text-align: center;
-  color: var(--animal-text-color);
-  font-variant-numeric: tabular-nums;
-  letter-spacing: 0.04em;
-  line-height: 1.1;
-}
-
-.hj-pomo-actions {
-  display: flex;
-  gap: 10px;
-  justify-content: center;
-}
-
-/* 抽卡 */
-.gacha-today-line {
-  width: 100%;
-  margin: 0;
-  padding: 0 4px 2px;
-  font-size: 14px;
-  color: var(--animal-text-color-secondary);
-  text-align: left;
-}
-
-.gacha-body {
-  display: flex;
-  justify-content: center;
-  padding: 6px 0;
-}
-
-.gacha-card-back {
-  width: 220px;
-  height: 280px;
-  border-radius: 20px;
-  border: 2px dashed var(--animal-border-color);
-  background: var(--animal-bg-color-secondary);
-  color: var(--animal-text-color-secondary);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
-  font-size: 15px;
-  font-weight: 700;
-  cursor: pointer;
-  transition: transform 0.15s ease;
-}
-
-.gacha-card-back:hover {
-  transform: scale(1.03);
-}
-
-.gacha-card {
-  width: 240px;
-  text-align: center;
-  padding: 18px 12px;
-}
-
-.gacha-rarity {
-  display: inline-block;
-  font-size: 13px;
-  font-weight: 800;
-  letter-spacing: 0.15em;
-  padding: 3px 12px;
-  border-radius: 999px;
-  background: var(--animal-primary-color-bg);
-  color: var(--animal-text-color);
-  margin-bottom: 8px;
-}
-
-.gacha-name {
-  font-size: 24px;
-  font-weight: 800;
-  color: var(--animal-text-color);
-  margin-top: 6px;
-}
-
-.gacha-meta {
-  font-size: 13px;
-  color: var(--animal-text-color-secondary);
-  margin-top: 4px;
-}
-
-.gacha-desc {
-  font-size: 14px;
-  color: var(--animal-text-color);
-  margin-top: 8px;
+.portal-shell::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle, rgba(195, 180, 155, 0.12) 1.5px, transparent 1.6px),
+    radial-gradient(circle, rgba(195, 180, 155, 0.08) 1px, transparent 1.4px);
+  background-size: 22px 22px;
+  background-position:
+    0 0,
+    11px 11px;
+  pointer-events: none;
 }
 
 .brief-menu-btn {
@@ -226,6 +76,10 @@
   flex-direction: column;
   gap: 18px;
   box-sizing: border-box;
+}
+
+.hj-page-title {
+  align-self: center;
 }
 
 /* hero */
@@ -411,12 +265,6 @@
   padding: 8px 2px 2px;
 }
 
-/* 拨号进度条：纯色填充，盖掉 variant 自带的场景图 */
-.hj-dial-progress [class*="animal-fill-"] {
-  background-image: none !important;
-  background-color: var(--animal-primary-color);
-}
-
 .hj-dial-log {
   list-style: none;
   margin: 0;
@@ -435,18 +283,6 @@
   align-items: center;
   gap: 10px;
   line-height: 1.5;
-  animation: hj-dial-line-in 0.3s var(--animal-motion-ease) both;
-}
-
-@keyframes hj-dial-line-in {
-  from {
-    opacity: 0;
-    transform: translateY(6px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
 }
 
 .hj-dial-log li::before {
@@ -456,15 +292,7 @@
   border-radius: 50%;
   background: var(--animal-border-color);
   flex: none;
-}
-
-.hj-dial-log li.done {
-  color: var(--animal-text-color-secondary);
-}
-
-.hj-dial-log li.done::before {
-  background: var(--animal-primary-color);
-  opacity: 0.4;
+  transition: background 0.2s var(--animal-motion-ease);
 }
 
 .hj-dial-log li.on {
@@ -474,17 +302,6 @@
 
 .hj-dial-log li.on::before {
   background: var(--animal-primary-color);
-  animation: hj-dot-pulse 1.2s ease-in-out infinite;
-}
-
-@keyframes hj-dot-pulse {
-  0%,
-  100% {
-    transform: scale(1);
-  }
-  50% {
-    transform: scale(1.35);
-  }
 }
 
 .hj-dial-done {
@@ -496,7 +313,20 @@
   color: var(--animal-text-color-secondary);
 }
 
-/* ---------- 页脚 / modal / drawer ---------- */
+/* ---------- 原有：表格 / 页脚 / modal / drawer ---------- */
+
+.earth-seasons-table-wrap {
+  position: relative;
+  z-index: 2;
+  width: min(100%, 820px);
+  margin: 0 auto;
+  display: flex;
+  justify-content: center;
+}
+
+.earth-seasons-table {
+  width: min(100%, 820px);
+}
 
 .portal-footer-wrap {
   position: fixed;
@@ -690,43 +520,6 @@
   transform: translateX(2px);
 }
 
-.brief-section-label {
-  width: 100%;
-  margin: 10px 0 2px;
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 0.2em;
-  color: var(--animal-text-color-secondary);
-  text-align: left;
-  padding-left: 4px;
-}
-
-.bg-swatch-grid {
-  width: 100%;
-  display: grid;
-  grid-template-columns: repeat(6, 1fr);
-  gap: 8px;
-  padding: 4px 2px 8px;
-}
-
-.bg-swatch {
-  aspect-ratio: 1;
-  border-radius: 10px;
-  border: 2px solid rgba(122, 102, 87, 0.18);
-  cursor: pointer;
-  padding: 0;
-  transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
-}
-
-.bg-swatch:hover {
-  transform: scale(1.1);
-}
-
-.bg-swatch.active {
-  border-color: var(--animal-primary-color);
-  box-shadow: 0 0 0 2px var(--animal-primary-color-bg), 0 2px 8px rgba(25, 200, 185, 0.35);
-}
-
 .drawer-content p {
   margin: 0;
 }
@@ -789,5 +582,16 @@
 
   .hj-tile-desc {
     font-size: 12px;
+  }
+
+  .earth-seasons-table-wrap {
+    width: 100%;
+    overflow-x: hidden;
+  }
+
+  .earth-seasons-table {
+    width: 100%;
+    margin: 0;
+    font-size: 14px;
   }
 }
