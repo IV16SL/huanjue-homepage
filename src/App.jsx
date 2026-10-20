@@ -3,6 +3,7 @@ import { MenuIcon, BookIcon, CatIcon, MailIcon, UserIcon, PhoneIcon, LockIcon, C
 import { useEffect, useRef, useState } from 'react'
 import 'animal-island-ui/style'
 import './App.css'
+import { playDialTones, playHandshake } from './dialAudio'
 
 const tiles = [
   { label: '博客', desc: '技术备忘 · 想到哪写到哪', Icon: BookIcon, href: 'https://blog.huanjue.me', color: 'app-pink', pattern: 'app-pink' },
@@ -16,48 +17,8 @@ const getDialSteps = (number) => [
   { at: 20, text: '正在验证用户名和密码……' },
   { at: 48, text: '已在网络上注册您的计算机……' },
   { at: 74, text: '正在协商 56K 连接……' },
-  { at: 100, text: '已连接！速度 49333 bps' },
+  { at: 100, text: '已连接！速度 33.6Kbps' },
 ]
-
-// DTMF 双音多频：每个按键 = 行频 + 列频
-const DTMF_FREQS = {
-  '1': [697, 1209], '2': [697, 1336], '3': [697, 1477],
-  '4': [770, 1209], '5': [770, 1336], '6': [770, 1477],
-  '7': [852, 1209], '8': [852, 1336], '9': [852, 1477],
-  '*': [941, 1209], '0': [941, 1336], '#': [941, 1477],
-}
-function toneBurst(ctx, dest, freqs, t, dur, vol = 0.28) {
-  freqs.forEach((f) => {
-    const o = ctx.createOscillator()
-    o.type = 'sine'
-    o.frequency.value = f
-    const g = ctx.createGain()
-    g.gain.setValueAtTime(0.0001, t)
-    g.gain.exponentialRampToValueAtTime(vol, t + 0.015)
-    g.gain.setValueAtTime(vol, t + Math.max(0.015, dur - 0.04))
-    g.gain.exponentialRampToValueAtTime(0.0001, t + dur)
-    o.connect(g)
-    g.connect(dest)
-    o.start(t)
-    o.stop(t + dur + 0.05)
-  })
-}
-
-// 用 Web Audio 实时合成：拨号音(1s) + 号码的 DTMF；返回整段时长（秒）
-function playDialTones(ctx, number) {
-  const dest = ctx.destination
-  const t0 = ctx.currentTime + 0.05
-  toneBurst(ctx, dest, [350, 440], t0, 1.0)
-  let t = t0 + 1.0 + 0.12
-  const clean = number.replace(/[^0-9*#]/g, '')
-  for (const ch of clean) {
-    const f = DTMF_FREQS[ch]
-    if (!f) continue
-    toneBurst(ctx, dest, f, t, 0.18)
-    t += 0.18 + 0.07
-  }
-  return t - t0
-}
 
 function App() {
   const getCurrentPath = () => window.location.pathname || '/'
@@ -87,12 +48,11 @@ function App() {
   const [dialOpen, setDialOpen] = useState(false)
   const [dialPercent, setDialPercent] = useState(0)
   const [helloOpen, setHelloOpen] = useState(false)
-  const audioRef = useRef(null)
   const dialTimerRef = useRef(null)
   const dialDoneRef = useRef(false)
   const actxRef = useRef(null)
   const hsTimerRef = useRef(null)
-  const hsPlayingRef = useRef(null)
+  const hsHandleRef = useRef(null)
 
   const navigateToPath = (path) => {
     const nextPath = path.startsWith('/') ? path : `/${path}`
@@ -118,31 +78,13 @@ function App() {
     }
   }, [])
 
-  // 登录框打开时预加载握手音频（已按 6.35s 剪好，直接从头播）
-  useEffect(() => {
-    if (dialLoginOpen) {
-      const hs = new Audio('/audio/dial-up-handshake.ogg')
-      hs.preload = 'auto'
-      hs.load()
-      audioRef.current = hs
-      return () => {
-        const cur = audioRef.current
-        if (cur === hs) {
-          try { hs.pause() } catch { /* ignore */ }
-          audioRef.current = null
-        }
-      }
-    }
-    return undefined
-  }, [dialLoginOpen])
-
   // 卸载时停掉拨号音
   useEffect(() => () => {
     if (dialTimerRef.current) window.clearInterval(dialTimerRef.current)
     if (hsTimerRef.current) window.clearTimeout(hsTimerRef.current)
-    const a = audioRef.current
-    if (a) {
-      try { a.pause() } catch { /* ignore */ }
+    const hs = hsHandleRef.current
+    if (hs) {
+      try { hs.stop() } catch { /* ignore */ }
     }
     const actx = actxRef.current
     if (actx) {
@@ -150,7 +92,7 @@ function App() {
     }
   }, [])
 
-  // 拨号完成：停计时器 + 音效淡出
+  // 拨号完成：停计时器 + 握手声淡出
   useEffect(() => {
     if (dialOpen && dialPercent >= 100 && !dialDoneRef.current) {
       dialDoneRef.current = true
@@ -158,16 +100,16 @@ function App() {
         window.clearInterval(dialTimerRef.current)
         dialTimerRef.current = null
       }
-      const au = hsPlayingRef.current
-      if (au) {
-        const fade = window.setInterval(() => {
-          if (au.volume > 0.15) {
-            au.volume = Math.max(0, au.volume - 0.15)
-          } else {
-            window.clearInterval(fade)
-            try { au.pause() } catch { /* ignore */ }
-          }
-        }, 120)
+      const hs = hsHandleRef.current
+      const actx = actxRef.current
+      if (hs && actx) {
+        try {
+          const t = actx.currentTime
+          const g = hs.master.gain
+          g.cancelScheduledValues(t)
+          g.setValueAtTime(g.value, t)
+          g.linearRampToValueAtTime(0.0001, t + 1.0)
+        } catch { /* ignore */ }
       }
     }
   }, [dialOpen, dialPercent])
@@ -277,10 +219,10 @@ function App() {
       window.clearTimeout(hsTimerRef.current)
       hsTimerRef.current = null
     }
-    const hs = hsPlayingRef.current
+    const hs = hsHandleRef.current
     if (hs) {
-      try { hs.pause() } catch { /* ignore */ }
-      hsPlayingRef.current = null
+      try { hs.stop() } catch { /* ignore */ }
+      hsHandleRef.current = null
     }
     const actx = actxRef.current
     if (actx) {
@@ -314,11 +256,7 @@ function App() {
     dialDoneRef.current = false
     setDialOpen(true)
 
-    // 预加载的握手音频（登录框关闭会置空 audioRef，这里先抓到局部变量）
-    const hs = audioRef.current
-    hsPlayingRef.current = hs
-
-    // Web Audio 实时合成拨号音 + 输入号码的 DTMF
+    // Web Audio 实时合成：拨号音 + 输入号码的 DTMF，随后是合成的握手声
     const AC = window.AudioContext || window.webkitAudioContext
     let dialingSecs = 0
     if (AC) {
@@ -328,12 +266,10 @@ function App() {
         actx.resume().catch(() => { /* ignore */ })
       }
       dialingSecs = playDialTones(actx, number)
-    }
-
-    // 拨号音播完再起握手（文件已剪好，直接从头播）
-    if (hs) {
       hsTimerRef.current = window.setTimeout(() => {
-        hs.play().catch(() => { /* 自动播放被拦截就静静拨号 */ })
+        try {
+          hsHandleRef.current = playHandshake(actx)
+        } catch { /* 合成失败就静静拨号 */ }
       }, Math.round(dialingSecs * 1000))
     }
 
@@ -345,6 +281,7 @@ function App() {
 
   const dialDone = dialPercent >= 100
   const dialSteps = getDialSteps(dialNumber.replace(/[^0-9*#]/g, '') || '16300')
+  const visibleDialSteps = dialSteps.filter((s) => dialPercent >= s.at)
 
   const handleDialDoneConfirm = () => {
     closeDial()
@@ -477,7 +414,7 @@ function App() {
           ) : (
             <>
               <section className="hj-hero">
-                <img className="hj-avatar" src="/avatar.png" alt="幻觉的头像" />
+                <img className="hj-avatar" src="/avatar.svg" alt="幻觉的头像" />
                 <div className="hj-hero-text">
                   <h1 className="hj-name">幻觉</h1>
                   <p className="hj-tagline">宇宙之主</p>
@@ -571,9 +508,9 @@ function App() {
             status={dialPassErr ? 'error' : undefined}
             aria-label="密码"
           />
-          <p className="hj-dial-tip">拨号号码决定拨号音 · 账号密码随便填，反正都是幻觉</p>
+          <p className="hj-dial-tip">账号密码随便填，反正都是幻觉</p>
           <div className="modal-footer-actions">
-            <Button type="text" onClick={() => setDialLoginOpen(false)}>
+            <Button type="primary" onClick={() => setDialLoginOpen(false)}>
               取消
             </Button>
             <Button type="primary" htmlType="submit">
@@ -600,8 +537,8 @@ function App() {
         <div className="hj-dial-progress">
           <Progress percent={Math.floor(dialPercent)} size="middle" showInfo aria-label="拨号进度" />
           <ul className="hj-dial-log">
-            {dialSteps.map((s) => (
-              <li key={s.text} className={dialPercent >= s.at ? 'on' : ''}>
+            {visibleDialSteps.map((s, i) => (
+              <li key={s.text} className={i === visibleDialSteps.length - 1 ? 'on' : 'done'}>
                 {s.text}
               </li>
             ))}
@@ -616,7 +553,7 @@ function App() {
       <Modal
         open={helloOpen}
         variant="game"
-        title="Hello"
+        title="Alert"
         width={360}
         typeSpeed={90}
         typewriter
@@ -624,7 +561,7 @@ function App() {
         onClose={() => setHelloOpen(false)}
         footer={
           <Button type="primary" onClick={() => setHelloOpen(false)}>
-            你好
+            确定
           </Button>
         }
         onOk={() => setHelloOpen(false)}
