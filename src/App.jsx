@@ -1,9 +1,10 @@
-import { Button, Card, Countdown, Drawer, Loading, Modal, Input, Progress, Table, Time, Title, Footer } from 'animal-island-ui'
+import { Background, Button, Card, Countdown, Drawer, Loading, Modal, Input, Progress, Table, Time, Title, Footer } from 'animal-island-ui'
 import { MenuIcon, BookIcon, CatIcon, MailIcon, UserIcon, PhoneIcon, LockIcon, ClockIcon } from 'naive-icons'
 import { useEffect, useRef, useState } from 'react'
 import 'animal-island-ui/style'
 import './App.css'
 import { playDialTones } from './dialAudio'
+import AlertTriangleIcon from './AlertTriangleIcon'
 
 const tiles = [
   { label: '博客', desc: '技术备忘 · 想到哪写到哪', Icon: BookIcon, href: 'https://blog.huanjue.me', color: 'app-pink', pattern: 'app-pink' },
@@ -13,6 +14,36 @@ const tiles = [
 ]
 
 const HANDSHAKE_FALLBACK_SECS = 22.25
+
+// 所有 Alert 气泡的标题：文字 + 与文字同高的警告三角
+const alertTitle = (
+  <span className="modal-title-with-icon">
+    Alert
+    <AlertTriangleIcon size={28} color="currentColor" aria-hidden="true" />
+  </span>
+)
+
+// 库里的 18 种背景预设；color 是该预设的主题色，头像/favicon 的符号取这个色
+const BG_PRESETS = [
+  { type: 'default', label: '奶油', color: '#C4B89E' },
+  { type: 'grid', label: '网格', color: '#B4A88F' },
+  { type: 'dots-dark-green', label: '深绿', color: '#5AA05A' },
+  { type: 'sprinkles', label: '彩针', color: '#FF7BAC' },
+  { type: 'sweet-corner', label: '甜点', color: '#E8A06C' },
+  { type: 'coffee-break', label: '咖啡', color: '#C68B4E' },
+  { type: 'dots-pink', label: '粉', color: '#F8A6B2' },
+  { type: 'dots-purple', label: '紫', color: '#B77DEE' },
+  { type: 'dots-blue', label: '蓝', color: '#889DF0' },
+  { type: 'dots-yellow', label: '黄', color: '#F7CD67' },
+  { type: 'dots-orange', label: '橙', color: '#E59266' },
+  { type: 'dots-teal', label: '青', color: '#82D5BB' },
+  { type: 'dots-green', label: '绿', color: '#8AC68A' },
+  { type: 'dots-red', label: '红', color: '#FC736D' },
+  { type: 'dots-lime-green', label: '柠檬绿', color: '#D1DA49' },
+  { type: 'dots-yellow-green', label: '黄绿', color: '#ECDF52' },
+  { type: 'dots-brown', label: '棕', color: '#9A835A' },
+  { type: 'dots-warm-peach-pink', label: '蜜桃粉', color: '#E18C6F' },
+]
 
 // 步骤阈值按音频时间线对齐：拨号音 → 停顿 0.6s → 握手（V.8bis/应答音/探测/训练/协商）
 const getDialSteps = (number, dialingSecs, totalSecs) => {
@@ -52,6 +83,14 @@ function App() {
   const [dialNumberErr, setDialNumberErr] = useState(false)
   const [dialUserErr, setDialUserErr] = useState(false)
   const [dialPassErr, setDialPassErr] = useState(false)
+  const [bgType, setBgType] = useState(() => {
+    try {
+      return localStorage.getItem('hj-bg-type') || 'default'
+    } catch {
+      return 'default'
+    }
+  })
+  const [avatarSrc, setAvatarSrc] = useState('/avatar.svg')
   const [dialOpen, setDialOpen] = useState(false)
   const [dialPercent, setDialPercent] = useState(0)
   const [dialSteps, setDialSteps] = useState(() => getDialSteps('16300', 1.65, 24.5))
@@ -103,6 +142,29 @@ function App() {
     }
     return undefined
   }, [dialLoginOpen])
+
+  // 背景切换：持久化 + 头像/favicon 的符号自动取背景主题色
+  useEffect(() => {
+    try {
+      localStorage.setItem('hj-bg-type', bgType)
+    } catch { /* ignore */ }
+    const preset = BG_PRESETS.find((p) => p.type === bgType)
+    if (!preset) return
+    let cancelled = false
+    fetch('/avatar.svg')
+      .then((r) => r.text())
+      .then((svg) => {
+        if (cancelled) return
+        const colored = svg.replace(/#ffffff/gi, preset.color)
+        const url = `data:image/svg+xml,${encodeURIComponent(colored)}`
+        document
+          .querySelectorAll('link[rel="icon"][type="image/svg+xml"]')
+          .forEach((l) => { l.href = url })
+        setAvatarSrc(url)
+      })
+      .catch(() => { /* 取不到就用原文件 */ })
+    return () => { cancelled = true }
+  }, [bgType])
 
   // 卸载时停掉拨号音
   useEffect(() => () => {
@@ -338,7 +400,7 @@ function App() {
       <Modal
         open={modalOpen}
         variant="game"
-        title="Alert"
+        title={alertTitle}
         width={420}
         typeSpeed={90}
         typewriter
@@ -385,7 +447,7 @@ function App() {
       <Modal
         open={Boolean(navConfirm)}
         variant="game"
-        title="Alert"
+        title={alertTitle}
         width={420}
         typeSpeed={90}
         typewriter
@@ -409,6 +471,7 @@ function App() {
         </div>
       </Modal>
 
+      <Background type={bgType} className="hj-bg-wrap">
       <div
         className={`portal-shell ${portalVisible ? 'portal-shell--ready' : ''}`}
       >
@@ -452,7 +515,7 @@ function App() {
           ) : (
             <>
               <section className="hj-hero">
-                <img className="hj-avatar" src="/avatar.svg" alt="幻觉的头像" />
+                <img className="hj-avatar" src={avatarSrc} alt="幻觉的头像" />
                 <div className="hj-hero-text">
                   <h1 className="hj-name">幻觉</h1>
                   <p className="hj-tagline">宇宙之主</p>
@@ -507,6 +570,7 @@ function App() {
           <Footer text="huanjue.me" />
         </div>
       </div>
+      </Background>
 
       {/* 拨号上网：登录表单 */}
       <Modal
@@ -591,7 +655,7 @@ function App() {
       <Modal
         open={helloOpen}
         variant="game"
-        title="Alert"
+        title={alertTitle}
         width={360}
         typeSpeed={90}
         typewriter
@@ -695,6 +759,7 @@ function App() {
           </div>
         )}
         <div className="brief-drawer-content">
+          <div className="brief-section-label">导航</div>
           <button type="button" className="brief-menu-item" onClick={() => {
             setBriefOpen(false)
             navigateToPath('/')
@@ -731,6 +796,22 @@ function App() {
           <button type="button" className="brief-menu-item" onClick={() => setBriefOpen(false)}>
             友情链接
           </button>
+          <div className="brief-section-label">背景</div>
+          <div className="bg-swatch-grid" role="radiogroup" aria-label="背景预设">
+            {BG_PRESETS.map((p) => (
+              <button
+                key={p.type}
+                type="button"
+                role="radio"
+                aria-checked={bgType === p.type}
+                title={p.label}
+                aria-label={`背景：${p.label}`}
+                className={`bg-swatch${bgType === p.type ? ' active' : ''}`}
+                style={{ backgroundColor: p.color }}
+                onClick={() => setBgType(p.type)}
+              />
+            ))}
+          </div>
         </div>
       </Drawer>
     </>
