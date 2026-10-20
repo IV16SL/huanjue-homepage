@@ -148,6 +148,7 @@ function App() {
   })
   const pomoModeRef = useRef(pomoMode)
   pomoModeRef.current = pomoMode
+  const [homePage, setHomePage] = useState(0)
   const dialTimerRef = useRef(null)
   const dialDoneRef = useRef(false)
   const actxRef = useRef(null)
@@ -592,6 +593,8 @@ function App() {
         </button>
 
         <div className="hj-inner">
+          {homePage === 0 && (
+            <>
               <section className="hj-hero">
                 <img className="hj-avatar" src={avatarSrc} alt="幻觉的头像" />
                 <div className="hj-hero-text">
@@ -640,7 +643,11 @@ function App() {
                 <PhoneIcon size={18} color="currentColor" aria-hidden="true" />
                 <span>拨号上网 · 56K</span>
               </button>
+            </>
+          )}
 
+          {homePage === 1 && (
+            <>
               <section className="hj-pomo" aria-label="番茄钟">
                 <div className="hj-pomo-head">
                   <span className="hj-pomo-title">番茄钟</span>
@@ -678,6 +685,32 @@ function App() {
                   </Button>
                 </div>
               </section>
+            </>
+          )}
+
+          <nav className="hj-pager" aria-label="主页分页">
+            <button
+              type="button"
+              className={`hj-pager-btn${homePage === 0 ? ' active' : ''}`}
+              onClick={() => setHomePage(0)}
+            >
+              主页
+            </button>
+            <button
+              type="button"
+              className={`hj-pager-btn${homePage === 1 ? ' active' : ''}`}
+              onClick={() => setHomePage(1)}
+            >
+              {pomoRunning ? (
+                <span className="hj-pager-live">
+                  <span className="hj-pager-dot" aria-hidden="true" />
+                  {String(Math.floor(pomoLeft / 60)).padStart(2, '0')}:{String(pomoLeft % 60).padStart(2, '0')}
+                </span>
+              ) : (
+                '番茄钟'
+              )}
+            </button>
+          </nav>
         </div>
 
         <div className="portal-footer-wrap">
