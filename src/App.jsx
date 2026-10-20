@@ -1,6 +1,6 @@
-import { Background, Button, Card, Countdown, Drawer, Loading, Modal, Input, Progress, Table, Time, Title, Footer } from 'animal-island-ui'
+import { Background, Button, Card, CodeBlock, Countdown, Drawer, Loading, Modal, Input, Progress, Time, Footer, Notification } from 'animal-island-ui'
 import { MenuIcon, BookIcon, CatIcon, MailIcon, UserIcon, PhoneIcon, LockIcon, ClockIcon, AlertTriangleIcon } from 'naive-icons'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import 'animal-island-ui/style'
 import './App.css'
 import { playDialTones } from './dialAudio'
@@ -21,6 +21,45 @@ const alertTitle = (
     <AlertTriangleIcon size={28} color="currentColor" aria-hidden="true" />
   </span>
 )
+
+// 猫猫抽卡池（档案见 ~/memory/people/）
+const CATS = [
+  { name: '御坂', birthday: '2016-06-11', gender: '♀', status: '在职', color: '#F8A6B2', rarity: 'SSR', weight: 10, desc: 'C位 · 全员大姐头' },
+  { name: '当麻', birthday: '2016-08-27', gender: '♂', status: '在职', color: '#D8D1BE', rarity: 'SR', weight: 25, desc: '全员唯一的男孩' },
+  { name: '拖把', birthday: '2022-05-25', gender: '♀', status: '在职', color: '#FFFDF8', rarity: 'SR', weight: 25, desc: '年纪最小的老幺' },
+  { name: '小三', birthday: '2017-07-19', gender: '♀', status: '在职', color: '#F7CD67', rarity: 'R', weight: 20, desc: '和表表同一天生日' },
+  { name: '表表', birthday: '2017-07-19', gender: '♀', status: '休假', color: '#889DF0', rarity: 'R', weight: 20, desc: '休假中——抽到了也不上班' },
+]
+
+const RARITY_COLOR = { SSR: 'app-yellow', SR: 'purple', R: 'app-blue' }
+
+const pickCat = (rand) => {
+  const total = CATS.reduce((s, c) => s + c.weight, 0)
+  let r = rand() * total
+  for (const c of CATS) {
+    r -= c.weight
+    if (r <= 0) return c
+  }
+  return CATS[0]
+}
+
+// 按日期播种，每天同一只
+const pickTodayCat = () => {
+  const d = new Date()
+  let h = 0
+  const seed = `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`
+  for (const ch of seed) h = (h * 31 + ch.charCodeAt(0)) >>> 0
+  return pickCat(() => {
+    h = (h * 1103515245 + 12345) >>> 0
+    return h / 4294967296
+  })
+}
+
+const POMO_MODES = [
+  { key: 'focus', label: '专注', minutes: 25 },
+  { key: 'short', label: '短休息', minutes: 5 },
+  { key: 'long', label: '长休息', minutes: 15 },
+]
 
 // 库里的 18 种背景预设；color 是该预设的主题色，头像/favicon 的符号取这个色
 const BG_PRESETS = [
@@ -58,8 +97,6 @@ const getDialSteps = (number, dialingSecs, totalSecs) => {
 }
 
 function App() {
-  const getCurrentPath = () => window.location.pathname || '/'
-
   const [loading, setLoading] = useState(true)
   const [modalOpen, setModalOpen] = useState(false)
   const [wasteOpen, setWasteOpen] = useState(false)
@@ -72,7 +109,6 @@ function App() {
   const [rightDrawerData, setRightDrawerData] = useState(null)
   const [routeLoading, setRouteLoading] = useState(false)
   const [routeTip, setRouteTip] = useState('正在进入宇宙之主的领地...')
-  const [currentPath, setCurrentPath] = useState(getCurrentPath())
 
   // 拨号上网
   const [dialLoginOpen, setDialLoginOpen] = useState(false)
@@ -94,33 +130,37 @@ function App() {
   const [dialPercent, setDialPercent] = useState(0)
   const [dialSteps, setDialSteps] = useState(() => getDialSteps('16300', 1.65, 24.5))
   const [helloOpen, setHelloOpen] = useState(false)
+  // 抽卡
+  const [gachaOpen, setGachaOpen] = useState(false)
+  const [gachaCat, setGachaCat] = useState(null)
+  const [gachaRevealed, setGachaRevealed] = useState(false)
+  const todayCat = useMemo(pickTodayCat, [])
+  // 番茄钟
+  const [pomoMode, setPomoMode] = useState('focus')
+  const [pomoLeft, setPomoLeft] = useState(POMO_MODES[0].minutes * 60)
+  const [pomoRunning, setPomoRunning] = useState(false)
+  const [pomoDone, setPomoDone] = useState(() => {
+    try {
+      return parseInt(localStorage.getItem('hj-pomo-done') || '0', 10) || 0
+    } catch {
+      return 0
+    }
+  })
+  const pomoModeRef = useRef(pomoMode)
+  pomoModeRef.current = pomoMode
   const dialTimerRef = useRef(null)
   const dialDoneRef = useRef(false)
   const actxRef = useRef(null)
   const hsTimerRef = useRef(null)
   const audioRef = useRef(null)
 
-  const navigateToPath = (path) => {
-    const nextPath = path.startsWith('/') ? path : `/${path}`
-    if (window.location.pathname !== nextPath) {
-      window.history.pushState({}, '', nextPath)
-    }
-    setCurrentPath(nextPath)
-  }
-
-  const isEarthSeasonsPage = currentPath === '/earthseasons'
-
   useEffect(() => {
     const loadingTimer = window.setTimeout(() => setLoading(false), 1400)
     const modalTimer = window.setTimeout(() => setModalOpen(true), 1700)
-    const handleLocationChange = () => setCurrentPath(getCurrentPath())
-
-    window.addEventListener('popstate', handleLocationChange)
 
     return () => {
       window.clearTimeout(loadingTimer)
       window.clearTimeout(modalTimer)
-      window.removeEventListener('popstate', handleLocationChange)
     }
   }, [])
 
@@ -164,6 +204,66 @@ function App() {
       .catch(() => { /* 取不到就用原文件 */ })
     return () => { cancelled = true }
   }, [bgType])
+
+  // 番茄钟走表
+  useEffect(() => {
+    if (!pomoRunning) return undefined
+    const iv = window.setInterval(() => {
+      setPomoLeft((s) => {
+        if (s <= 1) {
+          window.clearInterval(iv)
+          setPomoRunning(false)
+          const isFocus = pomoModeRef.current === 'focus'
+          if (isFocus) {
+            setPomoDone((d) => {
+              const nd = d + 1
+              try {
+                localStorage.setItem('hj-pomo-done', String(nd))
+              } catch { /* ignore */ }
+              return nd
+            })
+          }
+          try {
+            Notification.success({
+              message: isFocus ? '番茄熟了！' : '休息结束！',
+              description: isFocus ? '专注 25 分钟完成，起来走走吧' : '回来继续专注吧',
+            })
+          } catch { /* ignore */ }
+          playChime()
+          return 0
+        }
+        return s - 1
+      })
+    }, 1000)
+    return () => window.clearInterval(iv)
+  }, [pomoRunning])
+
+  const playChime = () => {
+    try {
+      const AC = window.AudioContext || window.webkitAudioContext
+      if (!AC) return
+      const ctx = new AC()
+      if (ctx.state === 'suspended') ctx.resume().catch(() => {})
+      const t = ctx.currentTime + 0.05
+      toneBurst(ctx, ctx.destination, [880], t, 0.25, 0.3)
+      toneBurst(ctx, ctx.destination, [1174.66], t + 0.3, 0.45, 0.3)
+      window.setTimeout(() => ctx.close().catch(() => {}), 1600)
+    } catch { /* ignore */ }
+  }
+
+  const switchPomoMode = (key) => {
+    const m = POMO_MODES.find((x) => x.key === key)
+    if (!m) return
+    setPomoMode(key)
+    setPomoRunning(false)
+    setPomoLeft(m.minutes * 60)
+  }
+
+  const openGacha = () => {
+    setGachaCat(pickCat(Math.random))
+    setGachaRevealed(false)
+    setGachaOpen(true)
+  }
 
   // 卸载时停掉拨号音
   useEffect(() => () => {
@@ -381,6 +481,14 @@ function App() {
 
   const dialDone = dialPercent >= 100
   const visibleDialSteps = dialSteps.filter((s) => dialPercent >= s.at)
+  const dialNumberClean = dialNumber.replace(/[^0-9*#]/g, '') || '16300'
+  const dialAtLines = [
+    `ATDT${dialNumberClean}`,
+    'CONNECT 33600',
+    'login: huanjue',
+    'password: ********',
+    'PPP: IPCP up (10.8.0.6)',
+  ].slice(0, visibleDialSteps.length)
 
   const handleDialDoneConfirm = () => {
     closeDial()
@@ -484,35 +592,6 @@ function App() {
         </button>
 
         <div className="hj-inner">
-          {isEarthSeasonsPage ? (
-            <>
-              <Title className="hj-page-title" variant="layer" color="app-blue">
-                地球四季
-              </Title>
-              <div className="earth-seasons-table-wrap">
-                <Table
-                  className="earth-seasons-table"
-                  columns={[
-                    { title: 'Phenomenon', dataIndex: 'phenomenon', width: '30%' },
-                    { title: 'Date', dataIndex: 'date', width: '35%' },
-                    { title: 'Time', dataIndex: 'time', width: '35%' },
-                  ]}
-                  dataSource={[
-                    { phenomenon: 'Perihelion', date: 'Jan 4', time: '01:15' },
-                    { phenomenon: 'Equinox', date: 'Mar 20', time: '22:46' },
-                    { phenomenon: 'Solstice', date: 'Jun 21', time: '16:24' },
-                    { phenomenon: 'Aphelion', date: 'Jul 7', time: '01:30' },
-                    { phenomenon: 'Equinox', date: 'Sept 23', time: '08:05' },
-                    { phenomenon: 'Solstice', date: 'Dec 22', time: '04:05' },
-                  ]}
-                  rowKey={(record) => `${record.phenomenon}-${record.date}`}
-                  pagination={false}
-                  striped={true}
-                />
-              </div>
-            </>
-          ) : (
-            <>
               <section className="hj-hero">
                 <img className="hj-avatar" src={avatarSrc} alt="幻觉的头像" />
                 <div className="hj-hero-text">
@@ -561,8 +640,44 @@ function App() {
                 <PhoneIcon size={18} color="currentColor" aria-hidden="true" />
                 <span>拨号上网 · 56K</span>
               </button>
-            </>
-          )}
+
+              <section className="hj-pomo" aria-label="番茄钟">
+                <div className="hj-pomo-head">
+                  <span className="hj-pomo-title">番茄钟</span>
+                  <span className="hj-pomo-count" title="完成的专注番茄数">🍅 × {pomoDone}</span>
+                </div>
+                <div className="hj-pomo-modes" role="tablist" aria-label="番茄钟模式">
+                  {POMO_MODES.map((m) => (
+                    <button
+                      key={m.key}
+                      type="button"
+                      role="tab"
+                      aria-selected={pomoMode === m.key}
+                      className={`hj-pomo-mode${pomoMode === m.key ? ' active' : ''}`}
+                      onClick={() => switchPomoMode(m.key)}
+                    >
+                      {m.label}{m.minutes}'
+                    </button>
+                  ))}
+                </div>
+                <div className="hj-pomo-time" aria-live="polite">
+                  {String(Math.floor(pomoLeft / 60)).padStart(2, '0')}:{String(pomoLeft % 60).padStart(2, '0')}
+                </div>
+                <Progress
+                  percent={Math.round((1 - pomoLeft / (POMO_MODES.find((m) => m.key === pomoMode).minutes * 60)) * 100)}
+                  size="small"
+                  showInfo={false}
+                  aria-label="番茄进度"
+                />
+                <div className="hj-pomo-actions">
+                  <Button type="primary" onClick={() => setPomoRunning((r) => !r)}>
+                    {pomoRunning ? '暂停' : '开始'}
+                  </Button>
+                  <Button onClick={() => { setPomoRunning(false); switchPomoMode(pomoMode) }}>
+                    重置
+                  </Button>
+                </div>
+              </section>
         </div>
 
         <div className="portal-footer-wrap">
@@ -644,8 +759,48 @@ function App() {
               </li>
             ))}
           </ul>
+          {dialAtLines.length > 0 && (
+            <CodeBlock code={dialAtLines.join('\n')} copyable={false} className="hj-at-term" />
+          )}
           {dialDone && (
             <p className="hj-dial-done">欢迎来到幻觉互联网！本次连接纯属幻觉。</p>
+          )}
+        </div>
+      </Modal>
+
+      {/* 猫猫抽卡 */}
+      <Modal
+        open={gachaOpen}
+        variant="game"
+        title="猫猫抽卡机"
+        width={360}
+        maskClosable
+        onClose={() => setGachaOpen(false)}
+        footer={
+          gachaRevealed ? (
+            <Button type="primary" onClick={openGacha}>
+              再抽一次
+            </Button>
+          ) : null
+        }
+        onOk={() => setGachaOpen(false)}
+      >
+        <div className="gacha-body">
+          {!gachaRevealed ? (
+            <button type="button" className="gacha-card-back" onClick={() => setGachaRevealed(true)} aria-label="翻开卡片">
+              <CatIcon size={56} color="currentColor" aria-hidden="true" />
+              <span>点我翻开</span>
+            </button>
+          ) : (
+            gachaCat && (
+              <Card color={RARITY_COLOR[gachaCat.rarity]} className="gacha-card">
+                <div className="gacha-rarity">{gachaCat.rarity}</div>
+                <CatIcon size={64} aria-hidden="true" />
+                <div className="gacha-name">{gachaCat.name}</div>
+                <div className="gacha-meta">{gachaCat.birthday} · {gachaCat.gender} · {gachaCat.status}</div>
+                <div className="gacha-desc">{gachaCat.desc}</div>
+              </Card>
+            )
           )}
         </div>
       </Modal>
@@ -752,27 +907,13 @@ function App() {
             <span className="brief-drawer-title">Brief</span>
           </div>
         </div>
-        {!isEarthSeasonsPage && (
-          <div className="brief-drawer-header">
-            <Time className="brief-drawer-clock" />
-          </div>
-        )}
+        <div className="brief-drawer-header">
+          <Time className="brief-drawer-clock" />
+        </div>
         <div className="brief-drawer-content">
           <div className="brief-section-label">导航</div>
-          <button type="button" className="brief-menu-item" onClick={() => {
-            setBriefOpen(false)
-            navigateToPath('/')
-          }}>
-            主页
-          </button>
-          <button type="button" className="brief-menu-item" onClick={() => {
-            setBriefOpen(false)
-            navigateToPath('/earthseasons')
-          }}>
-            地球四季
-          </button>
           <button type="button" className="brief-menu-item" onClick={() => setBriefOpen(false)}>
-            太阳系
+            主页
           </button>
           <button type="button" className="brief-menu-item" onClick={openDialLogin}>
             拨号上网
@@ -794,6 +935,13 @@ function App() {
           </button>
           <button type="button" className="brief-menu-item" onClick={() => setBriefOpen(false)}>
             友情链接
+          </button>
+          <div className="brief-section-label">今日猫猫</div>
+          <p className="gacha-today-line">
+            今日：<strong>{todayCat.name}</strong>（{todayCat.rarity}）
+          </p>
+          <button type="button" className="brief-menu-item" onClick={openGacha}>
+            抽一只
           </button>
           <div className="brief-section-label">背景</div>
           <div className="bg-swatch-grid" role="radiogroup" aria-label="背景预设">
