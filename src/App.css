@@ -179,11 +179,13 @@
   display: flex;
   justify-content: center;
   padding: 6px 0;
+  font-family: var(--animal-font-family);
 }
 
 .gacha-card-back {
   width: 220px;
   height: 280px;
+  font-family: var(--animal-font-family);
   border-radius: 20px;
   border: 2px dashed var(--animal-border-color);
   background: var(--animal-bg-color-secondary);
@@ -415,32 +417,6 @@
   color: var(--animal-text-color-secondary);
 }
 
-/* 拨号上网入口 */
-.hj-dialup {
-  align-self: center;
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  border: 1px dashed var(--animal-border-color);
-  border-radius: 999px;
-  background: transparent;
-  padding: 10px 22px;
-  font-family: var(--animal-font-family);
-  font-size: 14px;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  color: var(--animal-text-color-secondary);
-  cursor: pointer;
-  transition: all 0.2s var(--animal-motion-ease);
-}
-
-.hj-dialup:hover {
-  color: var(--animal-text-color);
-  border-color: var(--animal-border-color-hover);
-  background: var(--animal-bg-color-secondary);
-  transform: translateY(-1px);
-}
-
 /* 拨号：登录表单 */
 .hj-dial-form {
   display: flex;
@@ -637,8 +613,25 @@
   display: none;
 }
 
+/* 库面板是 height:100vh，手机上含浏览器工具栏遮挡区，底部永远够不着；改 dvh 贴合可见高度 */
+.brief-drawer.animal-panelLeft-e9NDC {
+  height: 100vh;
+  height: 100dvh;
+}
+
 .brief-drawer .animal-body-lnM2P {
   padding-top: 0;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(122, 102, 87, 0.35) transparent;
+}
+
+.brief-drawer .animal-body-lnM2P::-webkit-scrollbar {
+  width: 6px;
+}
+
+.brief-drawer .animal-body-lnM2P::-webkit-scrollbar-thumb {
+  background: rgba(122, 102, 87, 0.35);
+  border-radius: 3px;
 }
 
 .brief-drawer-top {

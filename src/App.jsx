@@ -639,10 +639,6 @@ function App() {
                 })}
               </nav>
 
-              <button type="button" className="hj-dialup" onClick={openDialLogin}>
-                <PhoneIcon size={18} color="currentColor" aria-hidden="true" />
-                <span>拨号上网 · 56K</span>
-              </button>
             </>
           )}
 
