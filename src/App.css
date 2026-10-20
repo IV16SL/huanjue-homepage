@@ -47,6 +47,7 @@
   width: min(100%, 430px);
   margin: 18px auto 0;
   padding: 20px 22px;
+  font-family: var(--animal-font-family);
   background: var(--animal-bg-color);
   border: 1px solid var(--animal-border-color-light);
   border-radius: var(--animal-radius-lg, 24px);
@@ -83,6 +84,7 @@
 .hj-pomo-mode {
   flex: 1;
   padding: 8px 0;
+  font-family: var(--animal-font-family);
   border-radius: 12px;
   border: 1px solid var(--animal-border-color-light);
   background: transparent;
@@ -124,6 +126,7 @@
 }
 
 .hj-pager-btn {
+  font-family: var(--animal-font-family);
   padding: 8px 22px;
   border-radius: 999px;
   border: 1px solid var(--animal-border-color-light);
