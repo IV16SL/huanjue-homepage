@@ -8,7 +8,7 @@ import { playDialTones } from './dialAudio'
 const tiles = [
   { label: '博客', desc: '技术备忘 · 想到哪写到哪', Icon: BookIcon, href: 'https://blog.huanjue.me', color: 'app-pink', pattern: 'app-pink' },
   { label: '猫猫', desc: '五只猫的藏身处', Icon: CatIcon, href: 'https://cat.huanjue.me', color: 'purple', pattern: 'purple' },
-  { label: '邮箱', desc: 'hi@huanjue.me · 来信必回（幻觉）', Icon: MailIcon, href: 'mailto:hi@huanjue.me', color: 'app-blue', pattern: 'app-blue' },
+  { label: '邮箱', desc: 'hi@huanjue.me', Icon: MailIcon, href: 'mailto:hi@huanjue.me', color: 'app-blue', pattern: 'app-blue' },
   { label: '关于', desc: '关于这个幻觉', Icon: UserIcon, href: null, color: 'app-yellow', pattern: 'app-yellow' },
 ]
 
