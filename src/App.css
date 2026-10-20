@@ -34,6 +34,162 @@
   gap: 8px;
 }
 
+/* 拨号：AT 指令终端 */
+.hj-at-term {
+  margin-top: 2px;
+  font-size: 13px;
+  max-height: 150px;
+  overflow-y: auto;
+}
+
+/* 番茄钟 */
+.hj-pomo {
+  width: min(100%, 430px);
+  margin: 18px auto 0;
+  padding: 20px 22px;
+  background: var(--animal-bg-color);
+  border: 1px solid var(--animal-border-color-light);
+  border-radius: var(--animal-radius-lg, 24px);
+  box-shadow: var(--animal-shadow-sm, 0 2px 8px rgba(122, 102, 87, 0.08));
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  box-sizing: border-box;
+}
+
+.hj-pomo-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.hj-pomo-title {
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--animal-text-color);
+}
+
+.hj-pomo-count {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--animal-text-color-secondary);
+}
+
+.hj-pomo-modes {
+  display: flex;
+  gap: 8px;
+}
+
+.hj-pomo-mode {
+  flex: 1;
+  padding: 8px 0;
+  border-radius: 12px;
+  border: 1px solid var(--animal-border-color-light);
+  background: transparent;
+  color: var(--animal-text-color-secondary);
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.hj-pomo-mode.active {
+  background: var(--animal-primary-color-bg);
+  border-color: var(--animal-primary-color);
+  color: var(--animal-text-color);
+}
+
+.hj-pomo-time {
+  font-size: 56px;
+  font-weight: 800;
+  text-align: center;
+  color: var(--animal-text-color);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.04em;
+  line-height: 1.1;
+}
+
+.hj-pomo-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+}
+
+/* 抽卡 */
+.gacha-today-line {
+  width: 100%;
+  margin: 0;
+  padding: 0 4px 2px;
+  font-size: 14px;
+  color: var(--animal-text-color-secondary);
+  text-align: left;
+}
+
+.gacha-body {
+  display: flex;
+  justify-content: center;
+  padding: 6px 0;
+}
+
+.gacha-card-back {
+  width: 220px;
+  height: 280px;
+  border-radius: 20px;
+  border: 2px dashed var(--animal-border-color);
+  background: var(--animal-bg-color-secondary);
+  color: var(--animal-text-color-secondary);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.15s ease;
+}
+
+.gacha-card-back:hover {
+  transform: scale(1.03);
+}
+
+.gacha-card {
+  width: 240px;
+  text-align: center;
+  padding: 18px 12px;
+}
+
+.gacha-rarity {
+  display: inline-block;
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.15em;
+  padding: 3px 12px;
+  border-radius: 999px;
+  background: var(--animal-primary-color-bg);
+  color: var(--animal-text-color);
+  margin-bottom: 8px;
+}
+
+.gacha-name {
+  font-size: 24px;
+  font-weight: 800;
+  color: var(--animal-text-color);
+  margin-top: 6px;
+}
+
+.gacha-meta {
+  font-size: 13px;
+  color: var(--animal-text-color-secondary);
+  margin-top: 4px;
+}
+
+.gacha-desc {
+  font-size: 14px;
+  color: var(--animal-text-color);
+  margin-top: 8px;
+}
+
 .brief-menu-btn {
   position: absolute;
   top: 25px;
@@ -70,10 +226,6 @@
   flex-direction: column;
   gap: 18px;
   box-sizing: border-box;
-}
-
-.hj-page-title {
-  align-self: center;
 }
 
 /* hero */
@@ -344,20 +496,7 @@
   color: var(--animal-text-color-secondary);
 }
 
-/* ---------- 原有：表格 / 页脚 / modal / drawer ---------- */
-
-.earth-seasons-table-wrap {
-  position: relative;
-  z-index: 2;
-  width: min(100%, 820px);
-  margin: 0 auto;
-  display: flex;
-  justify-content: center;
-}
-
-.earth-seasons-table {
-  width: min(100%, 820px);
-}
+/* ---------- 页脚 / modal / drawer ---------- */
 
 .portal-footer-wrap {
   position: fixed;
@@ -650,16 +789,5 @@
 
   .hj-tile-desc {
     font-size: 12px;
-  }
-
-  .earth-seasons-table-wrap {
-    width: 100%;
-    overflow-x: hidden;
-  }
-
-  .earth-seasons-table {
-    width: 100%;
-    margin: 0;
-    font-size: 14px;
   }
 }
