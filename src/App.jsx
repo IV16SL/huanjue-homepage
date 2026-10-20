@@ -12,13 +12,20 @@ const tiles = [
   { label: '关于', desc: '关于这个幻觉', Icon: UserIcon, href: null, color: 'app-yellow', pattern: 'app-yellow' },
 ]
 
-const getDialSteps = (number) => [
-  { at: 0, text: `正在拨号 ${number}……` },
-  { at: 20, text: '正在验证用户名和密码……' },
-  { at: 48, text: '已在网络上注册您的计算机……' },
-  { at: 74, text: '正在协商 56K 连接……' },
-  { at: 100, text: '已连接！速度 33.6Kbps' },
-]
+const HANDSHAKE_FALLBACK_SECS = 22.25
+
+// 步骤阈值按音频时间线对齐：拨号音 → 停顿 0.6s → 握手（V.8bis/应答音/探测/训练/协商）
+const getDialSteps = (number, dialingSecs, totalSecs) => {
+  const pct = (t) => Math.min(99, Math.round((t / totalSecs) * 100))
+  const hs = (t) => dialingSecs + 0.6 + t // 握手文件内的时间 → 绝对时间
+  return [
+    { at: 0, text: `正在拨号 ${number}……` },
+    { at: pct(hs(4.5)), text: '正在验证用户名和密码……' }, // 应答音结束
+    { at: pct(hs(11)), text: '已在网络上注册您的计算机……' }, // 训练噪声中段
+    { at: pct(hs(17)), text: '正在协商 56K 连接……' }, // 协商音
+    { at: 100, text: '已连接！速度 33.6Kbps' }, // 音频播完
+  ]
+}
 
 function App() {
   const getCurrentPath = () => window.location.pathname || '/'
@@ -47,6 +54,7 @@ function App() {
   const [dialPassErr, setDialPassErr] = useState(false)
   const [dialOpen, setDialOpen] = useState(false)
   const [dialPercent, setDialPercent] = useState(0)
+  const [dialSteps, setDialSteps] = useState(() => getDialSteps('16300', 1.65, 24.5))
   const [helloOpen, setHelloOpen] = useState(false)
   const dialTimerRef = useRef(null)
   const dialDoneRef = useRef(false)
@@ -289,6 +297,10 @@ function App() {
       dialingSecs = playDialTones(actx, number)
     }
 
+    // 握手音频时长：直接用 ffprobe 实测值。这个 ogg 帧结构有问题，
+    // Chromium 上报的 duration 每次都不一样（17.x/21.x），不可信
+    const hsSecs = HANDSHAKE_FALLBACK_SECS
+
     // 拨号音播完，停顿 0.6s，再起握手声（文件已按 6.35s 剪好，直接从头播）
     if (hs) {
       hsTimerRef.current = window.setTimeout(() => {
@@ -296,14 +308,17 @@ function App() {
       }, Math.round((dialingSecs + 0.6) * 1000))
     }
 
+    // 进度条按音频总时长驱动，100% 落在握手播完的那一刻
+    const totalSecs = dialingSecs + 0.6 + hsSecs
+    setDialSteps(getDialSteps(number, dialingSecs, totalSecs))
     if (dialTimerRef.current) window.clearInterval(dialTimerRef.current)
+    const step = 100 / (totalSecs * 10) // 每 100ms 走一步
     dialTimerRef.current = window.setInterval(() => {
-      setDialPercent((p) => Math.min(100, p + 0.7))
-    }, 130)
+      setDialPercent((p) => Math.min(100, p + step))
+    }, 100)
   }
 
   const dialDone = dialPercent >= 100
-  const dialSteps = getDialSteps(dialNumber.replace(/[^0-9*#]/g, '') || '16300')
   const visibleDialSteps = dialSteps.filter((s) => dialPercent >= s.at)
 
   const handleDialDoneConfirm = () => {
